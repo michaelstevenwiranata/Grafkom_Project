@@ -7,7 +7,7 @@ const loader = new GLTFLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-camera.position.z = 0;
+camera.position.z =20;
 camera.position.y = 10;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight);
@@ -37,10 +37,21 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 // light.shadow.camera.far = 500; // default
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Color, Intensity
-directionalLight.position.set(10, 10, 10); // Position of the light
+directionalLight.position.set(0, 20, 0); // Position of the light
+
 directionalLight.castShadow = true; // Enable shadow casting
 scene.add(directionalLight);
 
+directionalLight.shadow.mapSize.width = 1024; // Width of the shadow map
+directionalLight.shadow.mapSize.height = 1024; // Height of the shadow map
+
+// Set the size of the shadow camera frustum
+directionalLight.shadow.camera.left = -50; // Left boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.right = 50; // Right boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.top = 50; // Top boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.bottom = -50; // Bottom boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.near = 0.5; // Near clipping plane of the shadow camera
+directionalLight.shadow.camera.far = 500;
 //pointerlock dipake buat bisa dapetin first person experience
 const control = new PointerLockControls(camera,renderer.domElement)
 
