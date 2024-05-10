@@ -19,6 +19,8 @@ async function loadModels(loader, scene){
         });
         await ruanganPromise;
 
+        // 
+
         await Promise.all([ruanganPromise]);
     } catch (error) {   
         console.log("Error loading models : " + error);

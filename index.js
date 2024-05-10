@@ -20,7 +20,7 @@ document.body.appendChild( renderer.domElement );
 const control = new PointerLockControls(camera, renderer.domElement)
 
 // LIGHTING
-const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
+const ambientLight = new THREE.AmbientLight(0xFFFFFF, 5); // soft white light
 ambientLight.position.set(20,20,20)
 scene.add(ambientLight);
 
