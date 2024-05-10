@@ -1,3 +1,5 @@
+import utils from './utils';
+
 async function loadModels(loader, scene){
     let ruangan, meja;
     try {
@@ -7,6 +9,10 @@ async function loadModels(loader, scene){
             loader.load('/public/ruangan.glb', function ( gltf ) {
                 ruangan = gltf.scene;
                 ruangan.scale.set(10,10,10)
+                
+                const center = utils.getCenterOBJ(ruangan);
+                ruangan.position.set(0,center.y,0);
+
                 scene.add(ruangan);
                 resolve();
             }, undefined, reject);
