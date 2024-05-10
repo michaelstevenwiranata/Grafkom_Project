@@ -7,8 +7,9 @@ const loader = new GLTFLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-camera.position.z =20;
-camera.position.y = 10;
+camera.position.z =-30;
+camera.position.y = 30;
+camera.position.x = 0;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight);
 renderer.setClearColor(0xFFFFFF);
@@ -21,37 +22,28 @@ scene.add(ambientLight);
 
 
 
+
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
 //Create a PointLight and turn on shadows for the light
-// const light = new THREE.PointLight( 0xffffff, 1, 100 );
-// light.position.set( 0, 20, 0 );
-// light.castShadow = true; // default false
-// scene.add( light );
 
-// //Set up shadow properties for the light
-// light.shadow.mapSize.width = 512; // default
-// light.shadow.mapSize.height = 512; // default
-// light.shadow.camera.near = 0.5; // default
-// light.shadow.camera.far = 500; // default
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Color, Intensity
-directionalLight.position.set(0, 20, 0); // Position of the light
+directionalLight.position.set(0, 30, 0); // Position of the light
 
 directionalLight.castShadow = true; // Enable shadow casting
 scene.add(directionalLight);
 
-directionalLight.shadow.mapSize.width = 1024; // Width of the shadow map
-directionalLight.shadow.mapSize.height = 1024; // Height of the shadow map
+directionalLight.shadow.mapSize.width = 4096; // Width of the shadow map
+directionalLight.shadow.mapSize.height = 4096; // Height of the shadow map
 
-// Set the size of the shadow camera frustum
-directionalLight.shadow.camera.left = -50; // Left boundary of the shadow camera's view frustum
-directionalLight.shadow.camera.right = 50; // Right boundary of the shadow camera's view frustum
-directionalLight.shadow.camera.top = 50; // Top boundary of the shadow camera's view frustum
-directionalLight.shadow.camera.bottom = -50; // Bottom boundary of the shadow camera's view frustum
-directionalLight.shadow.camera.near = 0.5; // Near clipping plane of the shadow camera
-directionalLight.shadow.camera.far = 500;
+// Set the size of the shadow camera frustum    
+directionalLight.shadow.camera.left = -400; // Left boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.right = 400; // Right boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.top = 400; // Top boundary of the shadow camera's view frustum
+directionalLight.shadow.camera.bottom = -400; // Bottom boundary of the shadow camera's view frustum
+
 //pointerlock dipake buat bisa dapetin first person experience
 const control = new PointerLockControls(camera,renderer.domElement)
 
@@ -67,6 +59,24 @@ let meja;
 let ruangan;
 var keyboard = {};
 
+const geometry = new THREE.BoxGeometry();
+
+// Create a standard material
+
+
+// Create a mesh using the geometry and material
+
+
+
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('/public/antique_fan/textures/TF_Oldfan_03a_normal.png');
+const material = new THREE.MeshStandardMaterial({ map:texture});  
+const cube = new THREE.Mesh(geometry, material)
+cube.position.x = 20;
+cube.position.y =20;
+cube.position.z=20;
+cube.scale.set(200,0.1,200)
+scene.add(cube)
 document.addEventListener('keydown', function(event) {
     keyboard[event.key] = true;
 });
@@ -84,12 +94,11 @@ async function loadModels() {
                 scene.add( lampu );
                 lampu.scale.set(3,3,3)
                 lampu.traverse(function (child) {
-                if (child.isMesh) {
-                    child.castShadow = true; // Enable shadow casting
-                    child.receiveShadow = true; // Enable shadow receiving
-                }
-                lampu.rotation.z=-Math.PI / 18;
-        });
+                    if (child.isMesh) {
+                        child.castShadow = true; // Enable shadow casting
+                        child.receiveShadow = true; // Enable shadow receiving
+                    }
+                });
                 resolve();
             }, undefined, reject);
         });
@@ -99,7 +108,7 @@ async function loadModels() {
             loader.load('/public/antique_wooden_table/scene.gltf', function ( gltf ) {
                 meja = gltf.scene;
                 scene.add( meja  );
-                meja.scale.set(50,50,50)
+                meja.scale.set(600,50,200)
                 meja.rotation.y = -Math.PI / 2;
                 meja.position.y=-40
                 meja.traverse(function (child) {
@@ -118,7 +127,7 @@ async function loadModels() {
                 radio = gltf.scene;
                 radio.scale.set(0.1,0.1,0.1);
                 radio.position.x = lampu.position.x + 40;
-                meja.traverse(function (child) {
+                radio.traverse(function (child) {
                     if (child.isMesh) {
                         child.castShadow = true; // Enable shadow casting
                         child.receiveShadow = true; // Enable shadow receiving
@@ -135,8 +144,12 @@ async function loadModels() {
                 old_pc.position.x = lampu.position.x - 40;
                 old_pc.scale.set(0.08,0.08,0.08);
                 old_pc.position.y+=10;
-                old_pc.receiveShadow = true;
-                old_pc.castShadow = true;
+                old_pc.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true; // Enable shadow casting
+                        child.receiveShadow = true; // Enable shadow receiving
+                    }
+                });
                 scene.add( old_pc);
                 resolve();
             }, undefined, reject);
@@ -149,6 +162,12 @@ async function loadModels() {
                 new_pc.scale.set(200,200,200);
                 
                 scene.add(new_pc);
+                new_pc.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true; // Enable shadow casting
+                        child.receiveShadow = true; // Enable shadow receiving
+                    }
+                });
                 resolve();
             }, undefined, reject);
         });
@@ -160,6 +179,12 @@ async function loadModels() {
                 newChair.scale.set(100,100,100);
                 newChair.receiveShadow = true;
                 newChair.castShadow = true;
+                newChair.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true; // Enable shadow casting
+                        child.receiveShadow = true; // Enable shadow receiving
+                    }
+                });
                 scene.add(newChair);
                 resolve();
             }, undefined, reject);
@@ -187,14 +212,9 @@ async function loadModels() {
 loadModels();
 
 
+let loncat = false;
+let fall = false;
 
-let direction = 1;
-let steps = 0;
-let mouseX = 0, mouseY = 0;
-document.addEventListener('mousemove', function(event) {
-    mouseY = event.clientY - window.innerHeight / 2;
-    mouseX = event.clientX - window.innerWidth / 2;
-}, false);
 
 function movement(delta){
     let speed = 50;
@@ -223,21 +243,21 @@ function movement(delta){
         console.log("POSISI Y :" + camera.position.y)
         console.log("POSISI Z :" + camera.position.z)
     }
+
     
 }
-let isRotating = false;
 
 
 function animate() {
     requestAnimationFrame( animate );
-   
     movement(clock.getDelta());
     control.lock();
-
+    
 
 
     renderer.render(scene, camera);
 
     
 }
+
 animate();
