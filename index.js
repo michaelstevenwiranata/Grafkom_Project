@@ -68,12 +68,12 @@ function movement(delta) {
         move = true
     }
 
-    if(move){updateBobbing()}
+    if (move) { updateBobbing() }
 }
 
 
 // LOAD MODELS
-let ruangan, meja, walldepan, wallkanan, wallatas;
+let ruangan, meja, walldepan, wallkanan, wallatas, kipas;
 async function loadModels() {
     try {
 
@@ -96,22 +96,22 @@ async function loadModels() {
         const ruangan_detail = utils.getBoundaryHWD(ruangan);
         const texture = textureLoader.load("./public/6464298.jpg");
 
-        const wkanan_geometry = new THREE.BoxGeometry(3,ruangan_detail.height,ruangan_detail.depth);
+        const wkanan_geometry = new THREE.BoxGeometry(3, ruangan_detail.height, ruangan_detail.depth);
         const wkanan_material = new THREE.MeshStandardMaterial({ map: texture });
         wallkanan = new THREE.Mesh(wkanan_geometry, wkanan_material);
-        wallkanan.position.set(ruangan_detail.width/2-10,ruangan_detail.height/2,0)
+        wallkanan.position.set(ruangan_detail.width / 2 - 10, ruangan_detail.height / 2, 0)
         scene.add(wallkanan);
 
-        const wdepan_geometry = new THREE.BoxGeometry(ruangan_detail.width-70,ruangan_detail.height,3);
+        const wdepan_geometry = new THREE.BoxGeometry(ruangan_detail.width - 70, ruangan_detail.height, 3);
         const wdepan_material = new THREE.MeshStandardMaterial({ map: texture });
         walldepan = new THREE.Mesh(wdepan_geometry, wdepan_material);
-        walldepan.position.set(25,ruangan_detail.height/2,ruangan_detail.depth/2)
+        walldepan.position.set(25, ruangan_detail.height / 2, ruangan_detail.depth / 2)
         scene.add(walldepan);
 
-        const watas_geometry = new THREE.BoxGeometry(ruangan_detail.width-70,3,ruangan_detail.depth);
+        const watas_geometry = new THREE.BoxGeometry(ruangan_detail.width - 70, 3, ruangan_detail.depth);
         const watas_material = new THREE.MeshStandardMaterial({ map: texture });
         wallatas = new THREE.Mesh(watas_geometry, watas_material);
-        wallatas.position.set(25,ruangan_detail.height,0)
+        wallatas.position.set(25, ruangan_detail.height, 0)
         scene.add(wallatas);
 
         // load meja tengah
@@ -120,7 +120,7 @@ async function loadModels() {
                 meja = gltf.scene;
                 meja.scale.set(100, 80, 150)
 
-                meja.position.set(ruangan_detail.width/2 - 50, 5, 120)
+                meja.position.set(ruangan_detail.width / 2 - 50, 5, 120)
                 meja.traverse(function (child) {
                     if (child.isMesh) {
                         child.castShadow = true; // Enable shadow casting
@@ -135,7 +135,26 @@ async function loadModels() {
         });
         await mejaPromise;
 
-        await Promise.all([ruanganPromise, mejaPromise]);
+        const kipasPromise = new Promise((resolve, reject) => {
+            loader.load('./public/simple_ceiling_fan.glb', function (gltf) {
+                kipas = gltf.scene;
+                kipas.scale.set(0.1, 0.1, 0.1)
+                kipas.position.set(0, 195, 0)
+                kipas.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true; // Enable shadow casting
+                        child.receiveShadow = true; // Enable shadow receiving
+                    }
+                });
+
+                scene.add(kipas);
+
+                resolve()
+            }, undefined, reject);
+        });
+        await kipasPromise;
+
+        await Promise.all([ruanganPromise, mejaPromise, kipasPromise]);
     } catch (error) {
         console.log("Error loading models : " + error);
     }
@@ -143,11 +162,64 @@ async function loadModels() {
 loadModels();
 
 // COLLISION
+let prevCameraPos = new THREE.Vector3(); //buat nyimpen posisi camera sebelumnya
+function checkCollisions() {
+    camera.updateMatrixWorld();
+    const cameraBox = new THREE.Box3();
+    const cameraPos = new THREE.Vector3();
+    camera.getWorldPosition(cameraPos);
+    cameraBox.setFromCenterAndSize(cameraPos, new THREE.Vector3(1, 1, 1));
 
+    let collisionDetected = false;
+
+    if (meja) {
+        const tableBox = new THREE.Box3().setFromObject(meja);
+        const tableSize = tableBox.getSize(new THREE.Vector3());
+        const tableCenter = tableBox.getCenter(new THREE.Vector3());
+        tableBox.setFromCenterAndSize(tableCenter, new THREE.Vector3(tableSize.x, tableSize.y + 100, tableSize.z));
+
+        if (cameraBox.intersectsBox(tableBox)) {
+            collisionDetected = true;
+        }
+    }
+    if (wallkanan) {
+        const wallKananBox = new THREE.Box3().setFromObject(wallkanan);
+        if (cameraBox.intersectsBox(wallKananBox)) {
+            collisionDetected = true;
+            console.log("kenak tembok kanan")
+        }
+    }
+    if (walldepan) {
+        const wallDepanBox = new THREE.Box3().setFromObject(walldepan);
+        if (cameraBox.intersectsBox(wallDepanBox)) {
+            collisionDetected = true;
+            console.log("kenak tembok depan")
+        }
+    }
+
+    if (collisionDetected) {
+        camera.position.copy(prevCameraPos);
+    } else {
+        prevCameraPos.copy(cameraPos);
+    }
+}
+
+function animasiKipas() {
+    if (kipas) {
+        let jarakx = Math.floor((Math.abs(camera.position.x)+50)/50);
+        let speed = (0.2) - ((jarakx/50)) - 0.04;
+        if(speed > 0.1) speed = 0.1;
+        kipas.rotation.y += speed;
+    }
+}
 
 // ANIMATE
 function animate() {
     requestAnimationFrame(animate);
+
+    checkCollisions();
+    // animasi kipas
+    animasiKipas();
 
     movement(clock.getDelta())
     control.lock();
