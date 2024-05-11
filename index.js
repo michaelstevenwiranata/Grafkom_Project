@@ -36,27 +36,42 @@ document.addEventListener('keyup', function (event) {
     keyboard[event.key] = false;
 });
 
+// bobbing
+var bobAmount = 0.3; // How much the camera should bob up and down
+var bobSpeed = 0.1; // How fast the bobbing should occur
+var bobOffset = 1; // Offset for bobbing animation
+function updateBobbing() {
+    var bobHeight = Math.sin(bobOffset) * bobAmount;
+    camera.position.y += bobHeight;
+    bobOffset += bobSpeed;
+}
+
+// movement handling
 function movement(delta) {
     let speed = 200;
     let actualSpeed = speed * delta;
     if (keyboard['W'] || keyboard['w']) {
         control.moveForward(actualSpeed);
+        updateBobbing();
     }
     if (keyboard['a'] || keyboard['A']) {
         control.moveRight(-actualSpeed)
+        updateBobbing();
     }
     if (keyboard['s'] || keyboard['S']) {
         control.moveForward(-actualSpeed)
+        updateBobbing();
     }
     if (keyboard['d'] || keyboard['D']) {
         control.moveRight(actualSpeed)
+        updateBobbing();
     }
 }
 
 
 // LOAD MODELS
+let ruangan, meja, walldepan, wallkanan, wallatas;
 async function loadModels() {
-    let ruangan, meja, walldepan, wallkanan, wallatas;
     try {
 
         // load model ruangan
