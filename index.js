@@ -49,23 +49,26 @@ function updateBobbing() {
 // movement handling
 function movement(delta) {
     let speed = 200;
+    let move = false;
     let actualSpeed = speed * delta;
     if (keyboard['W'] || keyboard['w']) {
         control.moveForward(actualSpeed);
-        updateBobbing();
+        move = true
     }
     if (keyboard['a'] || keyboard['A']) {
         control.moveRight(-actualSpeed)
-        updateBobbing();
+        move = true
     }
     if (keyboard['s'] || keyboard['S']) {
         control.moveForward(-actualSpeed)
-        updateBobbing();
+        move = true
     }
     if (keyboard['d'] || keyboard['D']) {
         control.moveRight(actualSpeed)
-        updateBobbing();
+        move = true
     }
+
+    if(move){updateBobbing()}
 }
 
 
