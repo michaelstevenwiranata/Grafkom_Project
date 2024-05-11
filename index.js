@@ -2,57 +2,53 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // import loadModels from './loadModels';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { Octree } from 'three/addons/math/Octree.js';
-import { Capsule } from 'three/addons/math/Capsule.js';
 import utils from './utils';
 
 // INITIAL SETUP
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const loader = new GLTFLoader();
 const clock = new THREE.Clock();
+const textureLoader = new THREE.TextureLoader();
 
 camera.position.z = 100;
 camera.position.x = 200;
 camera.position.y = 100;
 
-const playerCollider = new Capsule(new THREE.Vector3(0, 0.05, 0), new THREE.Vector3(0, 1, 0), 0.35);
-const worldOctree = new Octree();
-
 const renderer = new THREE.WebGLRenderer();
-renderer.setClearColor(0x000000);
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+renderer.setClearColor(0xFFFFFF);
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
 const control = new PointerLockControls(camera, renderer.domElement)
 
 // LIGHTING
 const ambientLight = new THREE.AmbientLight(0xFFFFFF, 5); // soft white light
-ambientLight.position.set(20,20,20)
+ambientLight.position.set(20, 20, 20)
 scene.add(ambientLight);
 
 // EVENT HANDLING
 let keyboard = {};
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     keyboard[event.key] = true;
 });
-document.addEventListener('keyup', function(event) {
+document.addEventListener('keyup', function (event) {
     keyboard[event.key] = false;
 });
 
-function movement(delta){
+function movement(delta) {
     let speed = 200;
     let actualSpeed = speed * delta;
-    if(keyboard['W'] || keyboard['w']){
+    if (keyboard['W'] || keyboard['w']) {
         control.moveForward(actualSpeed);
     }
-    if(keyboard['a'] || keyboard['A']){
+    if (keyboard['a'] || keyboard['A']) {
         control.moveRight(-actualSpeed)
     }
-    if(keyboard['s'] || keyboard['S']){
+    if (keyboard['s'] || keyboard['S']) {
         control.moveForward(-actualSpeed)
     }
-    if(keyboard['d'] || keyboard['D']){
+    if (keyboard['d'] || keyboard['D']) {
         control.moveRight(actualSpeed)
     }
 }
@@ -60,7 +56,7 @@ function movement(delta){
 
 // LOAD MODELS
 async function loadModels() {
-    let ruangan, meja;
+    let ruangan, meja, walldepan, wallkanan, wallatas;
     try {
 
         // load model ruangan
@@ -70,14 +66,35 @@ async function loadModels() {
                 ruangan.scale.set(10, 10, 10)
 
                 const center = utils.getCenterOBJ(ruangan);
-                ruangan.position.set(0, center.y, 0);
+                ruangan.position.set(-center.x, center.y, -center.z);
 
-                worldOctree.fromGraphNode(ruangan);
                 scene.add(ruangan);
                 resolve();
             }, undefined, reject);
         });
         await ruanganPromise;
+
+        // load tembok depan - kanan - atas
+        const ruangan_detail = utils.getBoundaryHWD(ruangan);
+        const texture = textureLoader.load("./public/6464298.jpg");
+
+        const wkanan_geometry = new THREE.BoxGeometry(3,ruangan_detail.height,ruangan_detail.depth);
+        const wkanan_material = new THREE.MeshStandardMaterial({ map: texture });
+        wallkanan = new THREE.Mesh(wkanan_geometry, wkanan_material);
+        wallkanan.position.set(ruangan_detail.width/2-10,ruangan_detail.height/2,0)
+        scene.add(wallkanan);
+
+        const wdepan_geometry = new THREE.BoxGeometry(ruangan_detail.width-70,ruangan_detail.height,3);
+        const wdepan_material = new THREE.MeshStandardMaterial({ map: texture });
+        walldepan = new THREE.Mesh(wdepan_geometry, wdepan_material);
+        walldepan.position.set(25,ruangan_detail.height/2,ruangan_detail.depth/2)
+        scene.add(walldepan);
+
+        const watas_geometry = new THREE.BoxGeometry(ruangan_detail.width-70,3,ruangan_detail.depth);
+        const watas_material = new THREE.MeshStandardMaterial({ map: texture });
+        wallatas = new THREE.Mesh(watas_geometry, watas_material);
+        wallatas.position.set(25,ruangan_detail.height,0)
+        scene.add(wallatas);
 
         // load meja tengah
         const mejaPromise = new Promise((resolve, reject) => {
@@ -85,8 +102,7 @@ async function loadModels() {
                 meja = gltf.scene;
                 meja.scale.set(100, 80, 150)
 
-                meja.position.set(0,5,50)
-                meja.rotation.y = -Math.PI / 2;
+                meja.position.set(ruangan_detail.width/2 - 50, 5, 120)
                 meja.traverse(function (child) {
                     if (child.isMesh) {
                         child.castShadow = true; // Enable shadow casting
@@ -94,7 +110,6 @@ async function loadModels() {
                     }
                 });
 
-                worldOctree.fromGraphNode(meja);
                 scene.add(meja);
 
                 resolve()
@@ -110,21 +125,16 @@ async function loadModels() {
 loadModels();
 
 // COLLISION
-function updatePlayerCollision(){
-    const result = worldOctree.capsuleIntersect(playerCollider);
-    if(result){
-        console.log("tabrakan");
-    }
-}
+
+
 // ANIMATE
 function animate() {
-	requestAnimationFrame( animate );
+    requestAnimationFrame(animate);
 
-    updatePlayerCollision();
     movement(clock.getDelta())
     control.lock();
 
-	renderer.render( scene, camera );
+    renderer.render(scene, camera);
 }
 
 animate();
