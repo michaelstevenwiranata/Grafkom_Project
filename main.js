@@ -8,7 +8,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 camera.position.z =-30;
-camera.position.y = 30;
+camera.position.y = 0;
 camera.position.x = 0;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight);
@@ -16,8 +16,8 @@ renderer.setClearColor(0xFFFFFF);
 document.body.appendChild( renderer.domElement );
 
 
-const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.5); // soft white light
-ambientLight.position.set(20,20,20)
+const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
+ambientLight.position.set(0,30,0)
 scene.add(ambientLight);
 
 
@@ -70,22 +70,20 @@ const geometry = new THREE.BoxGeometry();
 
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load('/public/antique_fan/textures/TF_Oldfan_03a_normal.png');
-const material = new THREE.MeshStandardMaterial({ map:texture});  
-const cube = new THREE.Mesh(geometry, material)
-cube.position.x = 20;
-cube.position.y =20;
-cube.position.z=20;
-cube.scale.set(200,0.1,200)
-scene.add(cube)
+let lastkey;
 document.addEventListener('keydown', function(event) {
     keyboard[event.key] = true;
 });
 
 document.addEventListener('keyup', function(event) {
     keyboard[event.key] = false;
+    console.log('halo')
+    control.moveForward(clock.getDelta()*500)
+    
+    
 });
 
-
+let lampuMixer;
 async function loadModels() {
     try {
         const lampuPromise = new Promise((resolve, reject) => {
@@ -99,6 +97,7 @@ async function loadModels() {
                         child.receiveShadow = true; // Enable shadow receiving
                     }
                 });
+                
                 resolve();
             }, undefined, reject);
         });
@@ -215,7 +214,21 @@ loadModels();
 let loncat = false;
 let fall = false;
 
+var bobAmount = 0.1; // How much the camera should bob up and down
+var bobSpeed = 0.1; // How fast the bobbing should occur
+var bobOffset = 1; // Offset for bobbing animation
 
+// Update function to be called in your animation loop
+function updateBobbing() {
+    // Calculate bobbing amount using sine function
+    var bobHeight = Math.sin(bobOffset) * bobAmount;
+
+    // Apply bobbing to the camera's position
+    camera.position.y += bobHeight;
+
+    // Update bob offset for next frame
+    bobOffset += bobSpeed;
+}
 function movement(delta){
     let speed = 50;
     let actualSpeed = speed * delta;
@@ -224,37 +237,69 @@ function movement(delta){
         console.log("POSISI X :" + camera.position.x)
         console.log("POSISI Y :" + camera.position.y)
         console.log("POSISI Z :" + camera.position.z)
+        lastkey = 'w';
+        updateBobbing();
     }
     if(keyboard['a'] || keyboard['A']){
         control.moveRight(-actualSpeed)
         console.log("POSISI X :" + camera.position.x)
         console.log("POSISI Y :" + camera.position.y)
         console.log("POSISI Z :" + camera.position.z)
+        lastkey = 'a';
+        updateBobbing();
     }
     if(keyboard['s'] || keyboard['S']){
         control.moveForward(-actualSpeed)
         console.log("POSISI X :" + camera.position.x)
         console.log("POSISI Y :" + camera.position.y)
         console.log("POSISI Z :" + camera.position.z)
+        
+        updateBobbing();
     }
     if(keyboard['d'] || keyboard['D']){
-        control.moveRight(actualSpeed)
+        control.moveRight(actualSpeed);
+        // lampu.position.x+=0.1;
         console.log("POSISI X :" + camera.position.x)
         console.log("POSISI Y :" + camera.position.y)
         console.log("POSISI Z :" + camera.position.z)
+        updateBobbing();
+        lastkey = 'd';
     }
-
-    
+    if(keyboard['Control']){
+        camera.position.y-=0.1;
+    }
+    if(keyboard[' ']){
+        camera.position.y+=0,1;
+    }
 }
 
 
+
+let prevCameraPos = new THREE.Vector3(); //buat nyimpen posisi camera sebelumnya
+function checkCollisions() {
+    camera.updateMatrixWorld();
+    const cameraBox = new THREE.Box3(); // Create an empty bounding box for the camera
+    const cameraPos = new THREE.Vector3();
+    camera.getWorldPosition(cameraPos);
+    cameraBox.setFromCenterAndSize(cameraPos, new THREE.Vector3(1, 1, 1)); // Set the camera box around its position
+
+    if (meja) {
+        const tableBox = new THREE.Box3().setFromObject(meja); 
+        if (cameraBox.intersectsBox(tableBox)) {
+            camera.position.copy(prevCameraPos);
+            console.log("Collision detected between camera and table!");
+        } else {
+            prevCameraPos.copy(cameraPos);
+        }
+    }
+}
 function animate() {
     requestAnimationFrame( animate );
     movement(clock.getDelta());
     control.lock();
     
 
-
+    checkCollisions();
     renderer.render(scene, camera);
 
     

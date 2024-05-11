@@ -1,40 +1,50 @@
-// Import Three.js
+// Import Three.js library
 import * as THREE from 'three';
 
-// Inisialisasi scene, camera, dan renderer
+// Import additional loaders
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+
+// Create scene, camera, and renderer
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.setClearColor(0xFFFFFF);
-// Menambahkan kubus ke dalam scene
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 }); // Gunakan material Phong untuk mendapatkan efek pencahayaan yang lebih baik
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
-
-// Menambahkan DirectionalLight ke dalam scene
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5); // Mengatur posisi DirectionalLight
+// Add lights to the scene
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+directionalLight.position.set(0, 1, 0);
 scene.add(directionalLight);
 
-// Menambahkan PointLight ke dalam scene
-const pointLight = new THREE.PointLight(0xff0000, 1, 100);
-pointLight.position.set(0, 10, 0); // Mengatur posisi PointLight
-scene.add(pointLight);
+// Load 3D model
+const loader = new GLTFLoader();
 
+loader.load( '/public/torch.glb', function ( gltf ) {
+
+	scene.add( gltf.scene );
+
+}, undefined, function ( error ) {
+
+	console.error( error );
+
+} );
+
+// Set camera position
 camera.position.z = 5;
 
-// Fungsi untuk merender adegan 3D
+// Function to handle window resizing
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', onWindowResize);
+
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
-
-    // Putar kubus
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-
     renderer.render(scene, camera);
 }
-
 animate();
