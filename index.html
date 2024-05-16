@@ -75,27 +75,29 @@
         const renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0xFFFFFF);
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.VSMShadowMap;
         document.body.appendChild(renderer.domElement);
 
         const control = new PointerLockControls(camera, renderer.domElement)
 
         // LIGHTING
-        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.5, 10, 2);
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.1, 10, 2);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // Warna putih dengan intensitas 0.5
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.1); // Warna putih dengan intensitas 0.5
         directionalLight.position.set(-50, 100, 20);
         scene.add(directionalLight);
 
         const plight = new THREE.PointLight(0xffffff, 1000); // Warna putih dengan intensitas 0.5
         plight.position.set(-30, 15, -100);
+        plight.castShadow = true;
         scene.add(plight);
 
-        const geometry = new THREE.BoxGeometry(1,1,1);
-        const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 }); // Gunakan material yang merespons terhadap pencahayaan
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(-30,15,-95)
-        scene.add(cube);
+
+        plight.shadow.mapSize.width = 512;
+        plight.shadow.mapSize.height = 512;
+        plight.shadow.bias = -0.005;
 
         // EVENT HANDLING
         let keyboard = {};
@@ -132,7 +134,7 @@
 
 
         // LOAD MODELS
-        let alas, rumah;
+        let alas, rumah, pintuUtama;
         async function loadModels() {
             try {
                 // load alas
@@ -140,12 +142,14 @@
                 textureAlas.wrapS = THREE.RepeatWrapping;
                 textureAlas.wrapT = THREE.RepeatWrapping;
                 textureAlas.repeat.set(10, 10);
-                const alas_geometry = new THREE.BoxGeometry(200, 1, 200);
+                const alas_geometry = new THREE.BoxGeometry(500, 1, 500);
                 const alas_material = new THREE.MeshStandardMaterial({ map: textureAlas });
                 alas = new THREE.Mesh(alas_geometry, alas_material);
                 alas.position.set(0, 0, 0);
+
                 scene.add(alas);
                 worldOctree.fromGraphNode(alas);
+
 
                 // load rumah
                 const ruanganPromise = new Promise((resolve, reject) => {
@@ -156,13 +160,33 @@
 
                         rumah.traverse(function (child) {
                             if (child.isMesh) {
-                                child.castShadow = true; // Enable shadow casting
-                                child.receiveShadow = true; // Enable shadow receiving
+                                child.castShadow = true;
+                                child.receiveShadow = true;
                             }
                         });
 
                         scene.add(rumah);
-                        worldOctree.fromGraphNode(rumah);
+                        // worldOctree.fromGraphNode(rumah);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await ruanganPromise;
+
+                // load pintu
+                const pintuPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/pintuTengah.glb', function (gltf) {
+                        pintuUtama = gltf.scene;
+                        pintuUtama.scale.set(10, 10, 10)
+                        pintuUtama.position.set(-44, 6.5, -70);
+
+                        pintuUtama.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+
+                        scene.add(pintuUtama);
                         resolve();
                     }, undefined, reject);
                 });
@@ -216,6 +240,20 @@
         }
 
         // ANIMATE
+        let openPintuUtama = false;
+        function bukaPintuUtama() {
+            if (pintuUtama) {
+                if (openPintuUtama) {
+                    let boundary = getBoundaryHWD(pintuUtama);
+                    console.log(boundary)
+                    pintuUtama.position.set(-48, 6.5, -75);
+                    pintuUtama.rotation.set(0, Math.PI/2, 0);
+                }else{
+                    pintuUtama.position.set(-44, 6.5, -70);
+                    pintuUtama.rotation.set(0, 0, 0);
+                }
+            }
+        }
         function animate() {
             requestAnimationFrame(animate);
 
@@ -225,10 +263,16 @@
                 updatePlayer(deltaTime);
             }
 
-            console.log(camera.position);
+            // console.log(camera.position);
             control.lock();
-            // -60 samep 75
-            // -50 sampe -40
+
+            // animasi buka pintu utama
+            if (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50) {
+                openPintuUtama = true;
+            }else{
+                openPintuUtama = false;
+            }
+            bukaPintuUtama();
             renderer.render(scene, camera);
         }
 
