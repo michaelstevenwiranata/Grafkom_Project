@@ -105,6 +105,22 @@
         streetLight2.shadow.mapSize.height = 512;
         streetLight2.shadow.bias = -0.005;
 
+        const streetLight3 = new THREE.PointLight(0xffffff, 1000,100,2);
+        streetLight3.position.set(-104, 60, -45);
+        streetLight3.castShadow = true;
+        scene.add(streetLight3);
+        streetLight3.shadow.mapSize.width = 512;
+        streetLight3.shadow.mapSize.height = 512;
+        streetLight3.shadow.bias = -0.005;
+
+        const streetLight4 = new THREE.PointLight(0xffffff, 1000,100,2);
+        streetLight4.position.set(14-100, 60, -60);
+        streetLight4.castShadow = true;
+        scene.add(streetLight4);
+        streetLight4.shadow.mapSize.width = 512;
+        streetLight4.shadow.mapSize.height = 512;
+        streetLight4.shadow.bias = -0.005;
+
         // EVENT HANDLING
         let keyboard = {};
         document.addEventListener('keydown', function (event) {
@@ -141,7 +157,7 @@
 
         // LOAD MODELS
 
-        let alas, rumah, pintuUtama, streetLamp;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2,kipas;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -195,22 +211,37 @@
                 });
                 await ruanganPromise;
 
-                // load street lamp
-                const streetlampPromise = new Promise((resolve, reject) => {
+                // load street lamp 1
+                const streetlamp1Promise = new Promise((resolve, reject) => {
                     loader.load('./public/street_lamp.glb', function (gltf) {
-                        streetLamp = gltf.scene;
-                        streetLamp.scale.set(10, 15, 10)
-                        streetLamp.position.set(-20, -6, -60);
+                        streetLamp1 = gltf.scene;
+                        streetLamp1.scale.set(10, 15, 10)
+                        streetLamp1.position.set(-20, -6, -60);
 
-                        streetLamp.traverse(objShadow);
+                        streetLamp1.traverse(objShadow);
 
-                        scene.add(streetLamp);
+                        scene.add(streetLamp1);
                         resolve();
                     }, undefined, reject);
                 });
-                await streetlampPromise;
+                await streetlamp1Promise;
 
-                await Promise.all([ruanganPromise, streetlampPromise]);
+                // load street lamp 2
+                const streetlamp2Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/street_lamp.glb', function (gltf) {
+                        streetLamp2 = gltf.scene;
+                        streetLamp2.scale.set(10, 15, 10)
+                        streetLamp2.position.set(-120, -6, -60);
+
+                        streetLamp2.traverse(objShadow);
+
+                        scene.add(streetLamp2);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await streetlamp1Promise;
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
