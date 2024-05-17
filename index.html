@@ -166,7 +166,7 @@
 
         // LOAD MODELS
 
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -199,7 +199,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        worldOctree.fromGraphNode(rumah);
+                        // worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -256,7 +256,6 @@
                         kipas = gltf.scene;
                         kipas.scale.set(0.02, 0.01, 0.02)
                         let center = getCenterOBJ(kipas);
-                        console.log(center);
                         kipas.position.set(-18, 35.5, -88);
 
                         kipas.traverse(objShadow);
@@ -267,8 +266,26 @@
                 })
                 await kipasPromise;
 
+                // load sofa
+                const sofaPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/sofa.glb', function (gltf) {
+                        sofa = gltf.scene;
+                        sofa.scale.set(0.1, 0.1, 0.1)
+                        sofa.rotation.y = Math.PI;
+                        let center = getCenterOBJ(sofa);
+                        sofa.position.set(-30, 6.5, -88);
 
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise]);
+                        sofa.traverse(objShadow);
+
+                        worldOctree.fromGraphNode(sofa);
+                        scene.add(sofa);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await sofaPromise;
+
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
