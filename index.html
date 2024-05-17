@@ -89,7 +89,7 @@
         directionalLight.position.set(-50, 100, 20);
         scene.add(directionalLight);
 
-        const streetLight1 = new THREE.PointLight(0xffffff, 1000,100,2);
+        const streetLight1 = new THREE.PointLight(0xffffff, 1000, 100, 2);
         streetLight1.position.set(-4, 60, -45);
         streetLight1.castShadow = true;
         scene.add(streetLight1);
@@ -97,7 +97,7 @@
         streetLight1.shadow.mapSize.height = 512;
         streetLight1.shadow.bias = -0.005;
 
-        const streetLight2 = new THREE.PointLight(0xffffff, 1000,100,2);
+        const streetLight2 = new THREE.PointLight(0xffffff, 1000, 100, 2);
         streetLight2.position.set(14, 60, -60);
         streetLight2.castShadow = true;
         scene.add(streetLight2);
@@ -105,7 +105,7 @@
         streetLight2.shadow.mapSize.height = 512;
         streetLight2.shadow.bias = -0.005;
 
-        const streetLight3 = new THREE.PointLight(0xffffff, 1000,100,2);
+        const streetLight3 = new THREE.PointLight(0xffffff, 1000, 100, 2);
         streetLight3.position.set(-104, 60, -45);
         streetLight3.castShadow = true;
         scene.add(streetLight3);
@@ -113,13 +113,22 @@
         streetLight3.shadow.mapSize.height = 512;
         streetLight3.shadow.bias = -0.005;
 
-        const streetLight4 = new THREE.PointLight(0xffffff, 1000,100,2);
-        streetLight4.position.set(14-100, 60, -60);
+        const streetLight4 = new THREE.PointLight(0xffffff, 1000, 100, 2);
+        streetLight4.position.set(14 - 100, 60, -60);
         streetLight4.castShadow = true;
         scene.add(streetLight4);
         streetLight4.shadow.mapSize.width = 512;
         streetLight4.shadow.mapSize.height = 512;
         streetLight4.shadow.bias = -0.005;
+
+        // light kipas
+        const kipasLight = new THREE.PointLight(0xffffff, 200, 100, 2);
+        kipasLight.position.set(-18, 27, -88);
+        kipasLight.castShadow = true;
+        scene.add(kipasLight);
+        kipasLight.shadow.mapSize.width = 512;
+        kipasLight.shadow.mapSize.height = 512;
+        kipasLight.shadow.bias = -0.005;
 
         // EVENT HANDLING
         let keyboard = {};
@@ -157,7 +166,7 @@
 
         // LOAD MODELS
 
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2,kipas;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -241,7 +250,25 @@
                 });
                 await streetlamp1Promise;
 
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise]);
+                // load kipas
+                const kipasPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/simple_ceiling_fan.glb', function (gltf) {
+                        kipas = gltf.scene;
+                        kipas.scale.set(0.02, 0.01, 0.02)
+                        let center = getCenterOBJ(kipas);
+                        console.log(center);
+                        kipas.position.set(-18, 35.5, -88);
+
+                        kipas.traverse(objShadow);
+
+                        scene.add(kipas);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await kipasPromise;
+
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -314,6 +341,11 @@
 
             console.log(camera.position);
             control.lock();
+
+            // animasi kipas
+            if (kipas) {
+                kipas.rotation.y += 0.1;
+            }
 
             // animasi buka pintu utama
             if (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50) {
