@@ -360,9 +360,7 @@
             control.lock();
 
             // animasi kipas
-            if (kipas) {
-                kipas.rotation.y += 0.1;
-            }
+            if (kipas) kipas.rotation.y += 0.1;
 
             // animasi buka pintu utama
             if (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50) {
