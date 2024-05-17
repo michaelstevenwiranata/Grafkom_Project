@@ -73,7 +73,7 @@
         let playerOnFloor = false;
 
         const renderer = new THREE.WebGLRenderer();
-        renderer.setClearColor(0xFFFFFF);
+        renderer.setClearColor(0x000000);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -89,15 +89,21 @@
         directionalLight.position.set(-50, 100, 20);
         scene.add(directionalLight);
 
-        const plight = new THREE.PointLight(0xffffff, 1000); // Warna putih dengan intensitas 0.5
-        plight.position.set(-30, 15, -100);
-        plight.castShadow = true;
-        scene.add(plight);
+        const streetLight1 = new THREE.PointLight(0xffffff, 1000,100,2);
+        streetLight1.position.set(-4, 60, -45);
+        streetLight1.castShadow = true;
+        scene.add(streetLight1);
+        streetLight1.shadow.mapSize.width = 512;
+        streetLight1.shadow.mapSize.height = 512;
+        streetLight1.shadow.bias = -0.005;
 
-
-        plight.shadow.mapSize.width = 512;
-        plight.shadow.mapSize.height = 512;
-        plight.shadow.bias = -0.005;
+        const streetLight2 = new THREE.PointLight(0xffffff, 1000,100,2);
+        streetLight2.position.set(14, 60, -60);
+        streetLight2.castShadow = true;
+        scene.add(streetLight2);
+        streetLight2.shadow.mapSize.width = 512;
+        streetLight2.shadow.mapSize.height = 512;
+        streetLight2.shadow.bias = -0.005;
 
         // EVENT HANDLING
         let keyboard = {};
@@ -134,7 +140,14 @@
 
 
         // LOAD MODELS
-        let alas, rumah, pintuUtama;
+
+        let alas, rumah, pintuUtama, streetLamp;
+        function objShadow(child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        }
         async function loadModels() {
             try {
                 // load alas
@@ -153,38 +166,28 @@
 
                 // load rumah
                 const ruanganPromise = new Promise((resolve, reject) => {
-                    loader.load('./public/rumahtanpapintu.glb', function (gltf) {
+                    loader.load('./public/rumah.glb', function (gltf) {
                         rumah = gltf.scene;
                         rumah.scale.set(10, 10, 10)
                         rumah.position.set(0, 0, 0);
 
-                        rumah.traverse(function (child) {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                            }
-                        });
+                        rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        // worldOctree.fromGraphNode(rumah);
+                        worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
                 await ruanganPromise;
 
-                // load pintu
+                // load pintu depan
                 const pintuPromise = new Promise((resolve, reject) => {
                     loader.load('./public/pintuDepan.glb', function (gltf) {
                         pintuUtama = gltf.scene;
                         pintuUtama.scale.set(10, 10, 10)
                         pintuUtama.position.set(-44, 6.5, -70);
 
-                        pintuUtama.traverse(function (child) {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                            }
-                        });
+                        pintuUtama.traverse(objShadow);
 
                         scene.add(pintuUtama);
                         resolve();
@@ -192,7 +195,22 @@
                 });
                 await ruanganPromise;
 
-                await Promise.all([ruanganPromise]);
+                // load street lamp
+                const streetlampPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/street_lamp.glb', function (gltf) {
+                        streetLamp = gltf.scene;
+                        streetLamp.scale.set(10, 15, 10)
+                        streetLamp.position.set(-20, -6, -60);
+
+                        streetLamp.traverse(objShadow);
+
+                        scene.add(streetLamp);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await streetlampPromise;
+
+                await Promise.all([ruanganPromise, streetlampPromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -247,8 +265,8 @@
                     let boundary = getBoundaryHWD(pintuUtama);
                     console.log(boundary)
                     pintuUtama.position.set(-48, 6.5, -75);
-                    pintuUtama.rotation.set(0, Math.PI/2, 0);
-                }else{
+                    pintuUtama.rotation.set(0, Math.PI / 2, 0);
+                } else {
                     pintuUtama.position.set(-44, 6.5, -70);
                     pintuUtama.rotation.set(0, 0, 0);
                 }
@@ -263,16 +281,18 @@
                 updatePlayer(deltaTime);
             }
 
-            // console.log(camera.position);
+            console.log(camera.position);
             control.lock();
 
             // animasi buka pintu utama
             if (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50) {
                 openPintuUtama = true;
-            }else{
+            } else {
                 openPintuUtama = false;
             }
             bukaPintuUtama();
+
+
             renderer.render(scene, camera);
         }
 
