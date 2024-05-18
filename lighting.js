@@ -50,4 +50,13 @@ export function setupLighting(scene, camera) {
     kipasLight.shadow.mapSize.width = 512;
     kipasLight.shadow.mapSize.height = 512;
     kipasLight.shadow.bias = -0.005;
+
+    // light bulan
+    const bulanLight = new THREE.PointLight(0xffffff, 1000, 1000, 2);
+    bulanLight.position.set(-100,290,-80);
+    bulanLight.castShadow = true;
+    scene.add(bulanLight);
+    bulanLight.shadow.mapSize.width = 2048;
+    bulanLight.shadow.mapSize.height = 2048;
+    bulanLight.shadow.bias = -0.005;
 }

@@ -119,16 +119,15 @@
             const speedDelta = deltaTime * (playerOnFloor ? 20 : 5) + 0.1;
             if (keyboard['W'] || keyboard['w']) {
                 playerVelocity.add(getForwardVector().multiplyScalar(speedDelta));
-                updateBobbing();
             }
             if (keyboard['a'] || keyboard['A']) {
-                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta)); updateBobbing();
+                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta)); 
             }
             if (keyboard['s'] || keyboard['S']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta)); updateBobbing();
+                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta)); 
             }
             if (keyboard['d'] || keyboard['D']) {
-                playerVelocity.add(getSideVector().multiplyScalar(speedDelta)); updateBobbing();
+                playerVelocity.add(getSideVector().multiplyScalar(speedDelta)); 
             }
             if (keyboard['r'] || keyboard['R']) {
                 spotlight.visible = !spotlight.visible;
@@ -157,7 +156,7 @@
         }
 
         // LOAD MODELS
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable, bulan;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -289,7 +288,20 @@
                 })
                 await longTablePromise;
 
-                //
+                // load bulan
+                const bulanPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/the_moon.glb', function (gltf) {
+                        bulan = gltf.scene;
+                        bulan.scale.set(10, 10, 10);
+                        bulan.position.set(-100,300,-100);
+
+                        bulan.traverse(objShadow);
+
+                        scene.add(bulan);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await bulanPromise;
 
                 await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise]);
             } catch (error) {
