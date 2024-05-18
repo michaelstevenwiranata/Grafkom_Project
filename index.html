@@ -76,7 +76,7 @@
         }
         function updateSpotlightPosition() {
             // buat supaya spotlight berada di depan camera
-            const offsetDistance = 5;
+            const offsetDistance = 0;
             const offset = new THREE.Vector3(0, 0, -offsetDistance);
             offset.applyQuaternion(camera.quaternion);
             spotlight.position.copy(camera.position).add(offset);
@@ -86,11 +86,12 @@
             spotlight.target.updateMatrixWorld();
         }
 
-        const spotlight = new THREE.SpotLight(0xffffff, 5000);
+        let wideSpotlight = false;
+        const spotlight = new THREE.SpotLight(0xffffff, 2);
         spotlight.position.set(0, 5, 10);
         spotlight.angle = Math.PI / 16;
         spotlight.penumbra = 0.1;
-        spotlight.decay = 2;
+        spotlight.decay = 0.1;
         spotlight.distance = 150;
 
         spotlight.shadow.mapSize.width = 2048; // Meningkatkan resolusi shadow map
@@ -113,6 +114,7 @@
         });
 
         // movement handling
+        let jump = false;
         function controls(deltaTime) {
             const speedDelta = deltaTime * (playerOnFloor ? 20 : 5) + 0.1;
             if (keyboard['W'] || keyboard['w']) {
@@ -120,30 +122,37 @@
                 updateBobbing();
             }
             if (keyboard['a'] || keyboard['A']) {
-                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));updateBobbing();
+                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta)); updateBobbing();
             }
             if (keyboard['s'] || keyboard['S']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));updateBobbing();
+                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta)); updateBobbing();
             }
             if (keyboard['d'] || keyboard['D']) {
-                playerVelocity.add(getSideVector().multiplyScalar(speedDelta));updateBobbing();
+                playerVelocity.add(getSideVector().multiplyScalar(speedDelta)); updateBobbing();
             }
             if (keyboard['r'] || keyboard['R']) {
                 spotlight.visible = !spotlight.visible;
             }
             if (keyboard['t'] || keyboard['T']) {
-                spotlight.angle = Math.PI / 4;
+                if (wideSpotlight == false) {
+                    spotlight.angle = Math.PI / 4;
+                    wideSpotlight = true;
+                } else {
+                    spotlight.angle = Math.PI / 16;
+                    wideSpotlight = false;
+                }
             }
             if (playerOnFloor) {
                 if (keyboard['v']) {
+                    jump = true;
                     playerVelocity.y = 15;
                 }
             }
         }
 
         function updateBobbing() {
-            if(playerOnFloor){
-                playerVelocity.y = 5;
+            if (playerOnFloor) {
+                playerVelocity.y = 3;
             }
         }
 
@@ -305,8 +314,12 @@
         function updatePlayer(deltaTime) {
             let damping = Math.exp(- 4 * deltaTime) - 1;
             if (!playerOnFloor) {
-                playerVelocity.y -= GRAVITY * deltaTime;
-                damping *= 0.01;
+                if (jump) {
+                    playerVelocity.y -= GRAVITY * deltaTime;
+                    damping *= 0.01;
+                } else {
+                    playerVelocity.y -= GRAVITY * deltaTime * 0.5;
+                }
             }
 
             playerVelocity.addScaledVector(playerVelocity, damping);
@@ -355,8 +368,10 @@
             for (let i = 0; i < STEPS_PER_FRAME; i++) {
                 controls(deltaTime);
                 updatePlayer(deltaTime);
+                if (playerOnFloor) {
+                    jump = false;
+                }
             }
-
             console.log(camera.position);
             control.lock();
 
