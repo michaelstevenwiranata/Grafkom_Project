@@ -23,34 +23,15 @@
     }
     </script>
     <script type="module">
-        // utils
-        function getBoundaryHWD(object) {
-            var boundingBox = new THREE.Box3().setFromObject(object);
-            var size = new THREE.Vector3();
-            boundingBox.getSize(size);
-
-            // Mendapatkan tinggi, lebar, dan kedalaman
-            var height = size.y;
-            var width = size.x;
-            var depth = size.z;
-
-            return { height, width, depth };
-        }
-        function getCenterOBJ(object) {
-            var boundingBox = new THREE.Box3().setFromObject(object);
-
-            var center = new THREE.Vector3();
-            boundingBox.getCenter(center);
-
-            return { ...center }
-        }
-
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
         import { Octree } from 'three/addons/math/Octree.js';
         import { Capsule } from 'three/addons/math/Capsule.js';
         import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
+        // utils, helper
+        import { getCenterOBJ, getBoundaryHWD } from "./helper.js"
+        import { setupLighting } from "./lighting.js"
 
         // INITIAL SETUP
         const scene = new THREE.Scene();
@@ -81,54 +62,46 @@
 
         const control = new PointerLockControls(camera, renderer.domElement)
 
+
+        // CENTER LIGHTING
+
+        // buat cube invisible supaya spotlight targetnya ke cube terus
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+        cube.visible = false;
+        scene.add(cube);
+        function updateObjectPosition() {
+            const vector = new THREE.Vector3(0, 0, -10);
+            vector.applyMatrix4(camera.matrixWorld);
+            cube.position.copy(vector);
+        }
+        function updateSpotlightPosition() {
+            // buat supaya spotlight berada di depan camera
+            const offsetDistance = 5;
+            const offset = new THREE.Vector3(0, 0, -offsetDistance);
+            offset.applyQuaternion(camera.quaternion);
+            spotlight.position.copy(camera.position).add(offset);
+
+            // buat ngarahin target spotlight ke posisi cube yang invisible
+            spotlight.target.position.copy(cube.position);
+            spotlight.target.updateMatrixWorld();
+        }
+
+        const spotlight = new THREE.SpotLight(0xffffff, 5000);
+        spotlight.position.set(0, 5, 10);
+        spotlight.angle = Math.PI / 16;
+        spotlight.penumbra = 0.1;
+        spotlight.decay = 2;
+        spotlight.distance = 150;
+
+        spotlight.shadow.mapSize.width = 2048; // Meningkatkan resolusi shadow map
+        spotlight.shadow.mapSize.height = 2048;
+        spotlight.shadow.bias = -0.0001;
+
+        spotlight.castShadow = true;
+        scene.add(spotlight);
+
         // LIGHTING
-        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.1, 10, 2);
-        scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.1); // Warna putih dengan intensitas 0.5
-        directionalLight.position.set(-50, 100, 20);
-        scene.add(directionalLight);
-
-        const streetLight1 = new THREE.PointLight(0xffffff, 1000, 100, 2);
-        streetLight1.position.set(-4, 60, -45);
-        streetLight1.castShadow = true;
-        scene.add(streetLight1);
-        streetLight1.shadow.mapSize.width = 512;
-        streetLight1.shadow.mapSize.height = 512;
-        streetLight1.shadow.bias = -0.005;
-
-        const streetLight2 = new THREE.PointLight(0xffffff, 1000, 100, 2);
-        streetLight2.position.set(14, 60, -60);
-        streetLight2.castShadow = true;
-        scene.add(streetLight2);
-        streetLight2.shadow.mapSize.width = 512;
-        streetLight2.shadow.mapSize.height = 512;
-        streetLight2.shadow.bias = -0.005;
-
-        const streetLight3 = new THREE.PointLight(0xffffff, 1000, 100, 2);
-        streetLight3.position.set(-104, 60, -45);
-        streetLight3.castShadow = true;
-        scene.add(streetLight3);
-        streetLight3.shadow.mapSize.width = 512;
-        streetLight3.shadow.mapSize.height = 512;
-        streetLight3.shadow.bias = -0.005;
-
-        const streetLight4 = new THREE.PointLight(0xffffff, 1000, 100, 2);
-        streetLight4.position.set(14 - 100, 60, -60);
-        streetLight4.castShadow = true;
-        scene.add(streetLight4);
-        streetLight4.shadow.mapSize.width = 512;
-        streetLight4.shadow.mapSize.height = 512;
-        streetLight4.shadow.bias = -0.005;
-
-        // light kipas
-        const kipasLight = new THREE.PointLight(0xffffff, 200, 100, 2);
-        kipasLight.position.set(-18, 27, -88);
-        kipasLight.castShadow = true;
-        scene.add(kipasLight);
-        kipasLight.shadow.mapSize.width = 512;
-        kipasLight.shadow.mapSize.height = 512;
-        kipasLight.shadow.bias = -0.005;
+        setupLighting(scene, camera)
 
         // EVENT HANDLING
         let keyboard = {};
@@ -139,22 +112,27 @@
             keyboard[event.key] = false;
         });
 
-
-
         // movement handling
         function controls(deltaTime) {
             const speedDelta = deltaTime * (playerOnFloor ? 20 : 5) + 0.1;
             if (keyboard['W'] || keyboard['w']) {
                 playerVelocity.add(getForwardVector().multiplyScalar(speedDelta));
+                updateBobbing();
             }
             if (keyboard['a'] || keyboard['A']) {
-                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));
+                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));updateBobbing();
             }
             if (keyboard['s'] || keyboard['S']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));
+                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));updateBobbing();
             }
             if (keyboard['d'] || keyboard['D']) {
-                playerVelocity.add(getSideVector().multiplyScalar(speedDelta));
+                playerVelocity.add(getSideVector().multiplyScalar(speedDelta));updateBobbing();
+            }
+            if (keyboard['r'] || keyboard['R']) {
+                spotlight.visible = !spotlight.visible;
+            }
+            if (keyboard['t'] || keyboard['T']) {
+                spotlight.angle = Math.PI / 4;
             }
             if (playerOnFloor) {
                 if (keyboard['v']) {
@@ -163,10 +141,14 @@
             }
         }
 
+        function updateBobbing() {
+            if(playerOnFloor){
+                playerVelocity.y = 5;
+            }
+        }
 
         // LOAD MODELS
-
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -180,10 +162,10 @@
                 textureAlas.wrapS = THREE.RepeatWrapping;
                 textureAlas.wrapT = THREE.RepeatWrapping;
                 textureAlas.repeat.set(10, 10);
-                const alas_geometry = new THREE.BoxGeometry(500, 1, 500);
+                const alas_geometry = new THREE.BoxGeometry(250, 1, 250);
                 const alas_material = new THREE.MeshStandardMaterial({ map: textureAlas });
                 alas = new THREE.Mesh(alas_geometry, alas_material);
-                alas.position.set(0, 0, 0);
+                alas.position.set(0, 0, -80);
 
                 scene.add(alas);
                 worldOctree.fromGraphNode(alas);
@@ -199,7 +181,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        // worldOctree.fromGraphNode(rumah);
+                        worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -272,8 +254,7 @@
                         sofa = gltf.scene;
                         sofa.scale.set(0.1, 0.1, 0.1)
                         sofa.rotation.y = Math.PI;
-                        let center = getCenterOBJ(sofa);
-                        sofa.position.set(-30, 6.5, -88);
+                        sofa.position.set(-25, 6.5, -88);
 
                         sofa.traverse(objShadow);
 
@@ -284,8 +265,24 @@
                 })
                 await sofaPromise;
 
+                // load long table  
+                const longTablePromise = new Promise((resolve, reject) => {
+                    loader.load('./public/long_table.glb', function (gltf) {
+                        longTable = gltf.scene;
+                        longTable.position.set(-3.5, 6, -88);
 
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise]);
+                        longTable.traverse(objShadow);
+
+                        worldOctree.fromGraphNode(longTable);
+                        scene.add(longTable);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await longTablePromise;
+
+                //
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -309,8 +306,9 @@
             let damping = Math.exp(- 4 * deltaTime) - 1;
             if (!playerOnFloor) {
                 playerVelocity.y -= GRAVITY * deltaTime;
-                damping *= 0.1;
+                damping *= 0.01;
             }
+
             playerVelocity.addScaledVector(playerVelocity, damping);
             const deltaPosition = playerVelocity.clone().multiplyScalar(deltaTime);
             playerCollider.translate(deltaPosition);
@@ -349,6 +347,9 @@
         }
         function animate() {
             requestAnimationFrame(animate);
+
+            updateSpotlightPosition();
+            updateObjectPosition();
 
             const deltaTime = Math.min(0.05, clock.getDelta()) / STEPS_PER_FRAME;
             for (let i = 0; i < STEPS_PER_FRAME; i++) {
