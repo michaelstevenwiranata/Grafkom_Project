@@ -156,7 +156,7 @@
         }
 
         // LOAD MODELS
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable, bulan;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable, bulan, kasur, pigura, mazda, glight;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -189,7 +189,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        worldOctree.fromGraphNode(rumah);
+                        // worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -303,7 +303,66 @@
                 })
                 await bulanPromise;
 
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise]);
+                // load bed
+                const kasurPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/bed.glb', function (gltf) {
+                        kasur = gltf.scene;
+                        kasur.position.set(-78,6,-168);
+                        kasur.scale.set(3,3,3);
+                        kasur.rotation.y = Math.PI/2;
+                        kasur.traverse(objShadow);
+
+                        worldOctree.fromGraphNode(kasur);
+                        scene.add(kasur);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await kasurPromise;
+
+                // load  picture frame
+                const piguraPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/picture.glb', function (gltf) {
+                        pigura = gltf.scene;
+                        pigura.position.set(-88,15,-160);
+                        pigura.scale.set(1.5,1.5,1.5)
+                        pigura.rotation.y = Math.PI/2;
+                        pigura.traverse(objShadow);
+
+                        scene.add(pigura);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await piguraPromise;
+
+                // load mobil mazda
+                const mazdaPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/mazda.glb', function (gltf) {
+                        mazda = gltf.scene;
+                        mazda.position.set(40, 18.65, -80);
+                        mazda.scale.set(6,6,6)
+                        mazda.traverse(objShadow);
+
+                        scene.add(mazda);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await mazdaPromise;
+
+                // load garage light
+                const glightPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/garage_light.glb', function (gltf) {
+                        glight = gltf.scene;
+                        glight.position.set(57, 31.85, -70);
+                        glight.scale.set(0.01,0.01,0.01)
+                        glight.traverse(objShadow);
+
+                        scene.add(glight);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await glightPromise;
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise, kasurPromise, piguraPromise, glightPromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -384,7 +443,7 @@
                     jump = false;
                 }
             }
-            console.log(camera.position);
+            // console.log(camera.position);
             control.lock();
 
             // animasi kipas
