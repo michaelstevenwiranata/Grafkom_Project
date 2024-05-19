@@ -111,10 +111,10 @@
         garageLight.shadow.mapSize.width = 2048;
         garageLight.shadow.mapSize.height = 2048;
         garageLight.shadow.bias = -0.005;
-        
+
         //disco
         const discoLamp = new THREE.PointLight(0xffffff, 500, 1000, 2);
-        discoLamp.position.set(-70,25,-88)
+        discoLamp.position.set(-70, 25, -88)
         discoLamp.castShadow = true;
         discoLamp.shadow.mapSize.width = 2048;
         discoLamp.shadow.mapSize.height = 2048;
@@ -173,7 +173,7 @@
         }
 
         // LOAD MODELS
-        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable, bulan, kasur, pigura, mazda, glight,radio,radioTable,disco;
+        let alas, rumah, pintuUtama, streetLamp1, streetLamp2, kipas, sofa, longTable, bulan, kasur, pigura, mazda, glight, radio, radioTable, disco;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -206,7 +206,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        // worldOctree.fromGraphNode(rumah);
+                        worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -378,49 +378,57 @@
                     }, undefined, reject);
                 })
                 await glightPromise;
+
                 //load radioTable 
                 const radioTablePromise = new Promise((resolve, reject) => {
                     loader.load('./public/table.glb', function (gltf) {
                         radioTable = gltf.scene;
                         radioTable.traverse(objShadow);
-                        radioTable.scale.set(2.6,2.6,2.6);
+                        radioTable.scale.set(2.6, 2.6, 2.6);
                         radioTable.position.y = 7;
                         radioTable.position.x = -70;
                         radioTable.position.z = -88;
+
                         scene.add(radioTable);
                         resolve();
                     }, undefined, reject);
                 })
                 await radioTablePromise
+
                 //load radio
                 const radioPromise = new Promise((resolve, reject) => {
                     loader.load('./public/radio_vef202.glb', function (gltf) {
                         radio = gltf.scene;
                         radio.traverse(objShadow);
-                        radio.scale.set(1.5,1.5,1.5);
+                        radio.scale.set(1.5, 1.5, 1.5);
                         radio.position.y = 15;
                         radio.position.x = -70;
                         radio.position.z = -88;
                         radio.rotation.y = Math.PI;
+
                         scene.add(radio);
                         resolve();
                     }, undefined, reject);
                 })
                 await radioPromise
+
+                // load disco lamp
                 const discoPromise = new Promise((resolve, reject) => {
                     loader.load('./public/disco_ball.glb', function (gltf) {
-                        disco= gltf.scene;
+                        disco = gltf.scene;
                         disco.traverse(objShadow);
-                        disco.scale.set(4,4,4);
+                        disco.scale.set(4, 4, 4);
                         disco.position.y = 35;
                         disco.position.x = -70;
                         disco.position.z = -88;
+
                         scene.add(disco);
                         resolve();
                     }, undefined, reject);
                 })
                 await discoPromise
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise, kasurPromise, piguraPromise, glightPromise,radioTablePromise,discoPromise,radioPromise]);
+
+                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise, kipasPromise, sofaPromise, longTablePromise, kasurPromise, piguraPromise, glightPromise, radioTablePromise, discoPromise, radioPromise]);
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -538,10 +546,15 @@
                 garageLight.visible = false;
             }
 
-            
+            if (camera.position.x >= -88 && camera.position.x <= -53 && camera.position.z >= -105 && camera.position.z <= -70) {
+                discoLamp.visible = true;
+            } else {
+                discoLamp.visible = false;
+            }
+
+
             renderer.render(scene, camera);
         }
-
         animate();
     </script>
 </body>
