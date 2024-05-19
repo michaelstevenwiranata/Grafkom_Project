@@ -103,6 +103,15 @@
 
         // LIGHTING
         setupLighting(scene, camera)
+        // lighting yang nyala dengan kondisi tertentu
+        const garageLight = new THREE.PointLight(0xffffff, 500, 1000, 2);
+        garageLight.position.set(57, 25, -70);
+        garageLight.castShadow = true;
+        scene.add(garageLight);
+        garageLight.shadow.mapSize.width = 2048;
+        garageLight.shadow.mapSize.height = 2048;
+        garageLight.shadow.bias = -0.005;
+        
 
         // EVENT HANDLING
         let keyboard = {};
@@ -121,13 +130,13 @@
                 playerVelocity.add(getForwardVector().multiplyScalar(speedDelta));
             }
             if (keyboard['a'] || keyboard['A']) {
-                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta)); 
+                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));
             }
             if (keyboard['s'] || keyboard['S']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta)); 
+                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));
             }
             if (keyboard['d'] || keyboard['D']) {
-                playerVelocity.add(getSideVector().multiplyScalar(speedDelta)); 
+                playerVelocity.add(getSideVector().multiplyScalar(speedDelta));
             }
             if (keyboard['r'] || keyboard['R']) {
                 spotlight.visible = !spotlight.visible;
@@ -293,7 +302,7 @@
                     loader.load('./public/the_moon.glb', function (gltf) {
                         bulan = gltf.scene;
                         bulan.scale.set(10, 10, 10);
-                        bulan.position.set(-100,300,-100);
+                        bulan.position.set(-100, 300, -100);
 
                         bulan.traverse(objShadow);
 
@@ -307,9 +316,9 @@
                 const kasurPromise = new Promise((resolve, reject) => {
                     loader.load('./public/bed.glb', function (gltf) {
                         kasur = gltf.scene;
-                        kasur.position.set(-78,6,-168);
-                        kasur.scale.set(3,3,3);
-                        kasur.rotation.y = Math.PI/2;
+                        kasur.position.set(-78, 6, -168);
+                        kasur.scale.set(3, 3, 3);
+                        kasur.rotation.y = Math.PI / 2;
                         kasur.traverse(objShadow);
 
                         worldOctree.fromGraphNode(kasur);
@@ -323,9 +332,9 @@
                 const piguraPromise = new Promise((resolve, reject) => {
                     loader.load('./public/picture.glb', function (gltf) {
                         pigura = gltf.scene;
-                        pigura.position.set(-88,15,-160);
-                        pigura.scale.set(1.5,1.5,1.5)
-                        pigura.rotation.y = Math.PI/2;
+                        pigura.position.set(-88, 15, -160);
+                        pigura.scale.set(1.5, 1.5, 1.5)
+                        pigura.rotation.y = Math.PI / 2;
                         pigura.traverse(objShadow);
 
                         scene.add(pigura);
@@ -339,7 +348,7 @@
                     loader.load('./public/mazda.glb', function (gltf) {
                         mazda = gltf.scene;
                         mazda.position.set(40, 18.65, -80);
-                        mazda.scale.set(6,6,6)
+                        mazda.scale.set(6, 6, 6)
                         mazda.traverse(objShadow);
 
                         scene.add(mazda);
@@ -353,7 +362,7 @@
                     loader.load('./public/garage_light.glb', function (gltf) {
                         glight = gltf.scene;
                         glight.position.set(57, 31.85, -70);
-                        glight.scale.set(0.01,0.01,0.01)
+                        glight.scale.set(0.01, 0.01, 0.01)
                         glight.traverse(objShadow);
 
                         scene.add(glight);
@@ -443,7 +452,7 @@
                     jump = false;
                 }
             }
-            // console.log(camera.position);
+            console.log(camera.position);
             control.lock();
 
             // animasi kipas
@@ -456,6 +465,12 @@
                 openPintuUtama = false;
             }
             bukaPintuUtama();
+
+            if (camera.position.x >= 30 && camera.position.x <= 95 && camera.position.z >= -105 && camera.position.z <= -40) {
+                garageLight.visible = true;
+            } else {
+                garageLight.visible = false;
+            }
 
 
             renderer.render(scene, camera);

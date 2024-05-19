@@ -59,13 +59,4 @@ export function setupLighting(scene, camera) {
     bulanLight.shadow.mapSize.width = 2048;
     bulanLight.shadow.mapSize.height = 2048;
     bulanLight.shadow.bias = -0.005;
-
-    // garage light
-    const garageLight = new THREE.PointLight(0xffffff, 500, 1000, 2);
-    garageLight.position.set(57, 25, -70);
-    garageLight.castShadow = true;
-    scene.add(garageLight);
-    garageLight.shadow.mapSize.width = 2048;
-    garageLight.shadow.mapSize.height = 2048;
-    garageLight.shadow.bias = -0.005;
 }
