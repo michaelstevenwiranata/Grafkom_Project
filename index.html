@@ -13,6 +13,11 @@
 </head>
 
 <body>
+    <div
+        style="position: fixed; top: 10px; left: 10px; background-color: rgb(16, 20, 41); height: 60px; width: 250px;  padding: 15px;">
+        <div style="color: white; font-family: 'Courier New', Courier, monospace;">kordinat : <span
+                id="kordinat"></span></div>
+    </div>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
@@ -23,6 +28,8 @@
     }
     </script>
     <script type="module">
+        let kordinatspan = document.getElementById("kordinat");
+
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
         import { Octree } from 'three/addons/math/Octree.js';
@@ -113,7 +120,7 @@
         garageLight.shadow.bias = -0.005;
 
         //disco
-        const discoLamp = new THREE.PointLight(0xffffff, 500, 1000, 2);
+        const discoLamp = new THREE.PointLight(0xffffff, 500, 1000, 2.5);
         discoLamp.position.set(-70, 25, -88)
         discoLamp.castShadow = true;
         discoLamp.shadow.mapSize.width = 2048;
@@ -206,7 +213,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        worldOctree.fromGraphNode(rumah);
+                        // worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -220,7 +227,6 @@
                         pintuUtama.position.set(-44, 6.5, -70);
 
                         pintuUtama.traverse(objShadow);
-
                         scene.add(pintuUtama);
                         resolve();
                     }, undefined, reject);
@@ -351,20 +357,6 @@
                 })
                 await piguraPromise;
 
-                // load mobil mazda
-                const mazdaPromise = new Promise((resolve, reject) => {
-                    loader.load('./public/mazda.glb', function (gltf) {
-                        mazda = gltf.scene;
-                        mazda.position.set(40, 18.65, -80);
-                        mazda.scale.set(6, 6, 6)
-                        mazda.traverse(objShadow);
-
-                        scene.add(mazda);
-                        resolve();
-                    }, undefined, reject);
-                })
-                await mazdaPromise;
-
                 // load garage light
                 const glightPromise = new Promise((resolve, reject) => {
                     loader.load('./public/garage_light.glb', function (gltf) {
@@ -394,7 +386,7 @@
                     }, undefined, reject);
                 })
                 await radioTablePromise
-// 
+                // 
                 //load radio
                 const radioPromise = new Promise((resolve, reject) => {
                     loader.load('./public/radio_vef202.glb', function (gltf) {
@@ -483,12 +475,18 @@
         // ANIMATE
         let openPintuUtama = false;
         const colors = [
-            0xff0000, // Red
-            0x00ff00, // Green
-            0x0000ff, // Blue
-            0xffff00, // Yellow
-            0xff00ff, // Magenta
-            0x00ffff  // Cyan
+            "#ff0000", // Merah
+            "#ff7f00", // Jingga
+            "#ffff00", // Kuning
+            "#7fff00", // Hijau muda
+            "#00ff00", // Hijau
+            "#00ff7f", // Hijau laut
+            "#00ffff", // Biru muda
+            "#007fff", // Biru laut
+            "#0000ff", // Biru
+            "#7f00ff", // Ungu
+            "#ff00ff", // Magenta
+            "#ff007f"  // Merah muda
         ];
 
         let currentColorIndex = 0;
@@ -498,7 +496,7 @@
             discoLamp.color.set(colors[currentColorIndex]);
             currentColorIndex = (currentColorIndex + 1) % colors.length;
         }
-        setInterval(changeColor, 1500);
+        setInterval(changeColor, 1000);
         function bukaPintuUtama() {
             if (pintuUtama) {
                 if (openPintuUtama) {
@@ -552,7 +550,9 @@
                 discoLamp.visible = false;
             }
 
-
+            if (kordinatspan) {
+                kordinatspan.textContent = `${Math.round(camera.position.x)}, ${Math.round(camera.position.y)}, ${Math.round(camera.position.z)}`
+            }
             renderer.render(scene, camera);
         }
         animate();
