@@ -1,0 +1,52 @@
+.crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.crosshair .vertical,
+.crosshair .horizontal {
+    position: absolute;
+    background-color: rgb(255, 255, 255);
+    ;
+}
+
+.crosshair .vertical {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 3px;
+    transform: translateX(-50%);
+}
+
+.crosshair .horizontal {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+}
+
+.focus-indicator {
+    position: fixed;
+    top: 200%;
+    transform: translateX(-50%);
+    right: -200px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-size: 20px;
+    color: rgb(255, 255, 255);
+    visibility: hidden;
+}
+
+.characterHighlight {
+    background-color: cadetblue;
+    height: 0px;
+    width: 0px;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 10px;
+}
