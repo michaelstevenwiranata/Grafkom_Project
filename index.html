@@ -14,12 +14,13 @@
 </head>
 
 <body>
-    <div
-        style="position: fixed; top: 10px; left: 10px; background-color: rgb(16, 20, 41); height: 60px; width: 250px;  padding: 15px;">
-        <div style="color: white; font-family: 'Courier New', Courier, monospace;">kordinat : <span
-                id="kordinat"></span></div>
+    <div class="mainInfoBox">
+        <span class="mainInfoText"><b>Kordinat : </b><span id="kordinat"></span></span>
+        <span class="mainInfoText"><b>Can Interact : </b><span class="interactFalse" style="font-weight: bold;"
+                id="interactinfo">FALSE</span></span>
     </div>
     <video id="video_ww" style="display: none;"></video>
+    <div id="alert-container"></div>
     <div class="crosshair">
         <div class="vertical"></div>
         <div class="horizontal"></div>
@@ -36,6 +37,7 @@
     </script>
     <script type="module">
         let kordinatspan = document.getElementById("kordinat");
+        let interactinfospan = document.getElementById("interactinfo");
 
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -44,7 +46,8 @@
         import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
         // utils, helper
-        import { getCenterOBJ, getBoundaryHWD } from "./helper.js"
+        import { checkUpdateIntersect } from "./game.js";
+        import { getCenterOBJ, getBoundaryHWD, showAlert } from "./helper.js"
         import { setupLighting } from "./lighting.js"
 
         // INITIAL SETUP
@@ -56,8 +59,10 @@
         const loader = new GLTFLoader();
         const clock = new THREE.Clock();
         const textureLoader = new THREE.TextureLoader();
-        let video
 
+        // interact & game component
+        let video, videoOn = false;
+        const alertContainer = document.getElementById('alert-container');
 
         const GRAVITY = 30;
         const STEPS_PER_FRAME = 5;
@@ -175,19 +180,10 @@
                 }
             }
             if (playerOnFloor) {
-                if (keyboard['v']) {
+                if (keyboard[' ']) {
                     jump = true;
                     playerVelocity.y = 15;
                 }
-            }
-            if(keyboard['F'] || keyboard['f']){
-                video.play();
-            }
-        }
-
-        function updateBobbing() {
-            if (playerOnFloor) {
-                playerVelocity.y = 3;
             }
         }
 
@@ -228,7 +224,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        worldOctree.fromGraphNode(rumah);
+                        // worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -432,10 +428,12 @@
                 const televisionPromise = new Promise((resolve, reject) => {
                     loader.load('./public/television.glb', function (gltf) {
                         television = gltf.scene;
+                        television.name = "television"
                         television.traverse(objShadow)
                         television.scale.set(20, 20, 20);
                         television.rotation.y = -Math.PI / 2;
                         television.position.set(-5, 12.25, -88);
+
 
                         scene.add(television);
                         resolve();
@@ -447,6 +445,8 @@
                     kipasPromise, sofaPromise, longTablePromise, kasurPromise,
                     piguraPromise, glightPromise, radioTablePromise, discoPromise,
                     radioPromise, televisionPromise]);
+                // add interactable object;
+                interactableObject.push(television)
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -456,15 +456,15 @@
         video = document.getElementById('video_ww')
         video.src = "public/wutheringwaves.mp4";
         video.muted = false;
-        video.loop = true;
+        video.loop = false;
         let videoTexture = new THREE.VideoTexture(video);
-        const geoLayar = new THREE.PlaneGeometry( 2.2255, 1.245 ); // param1 : lebar, param2 : tinggi unitnya
-        const mpmLayar = new THREE.MeshBasicMaterial( {map: videoTexture} );
-        const layar = new THREE.Mesh( geoLayar, mpmLayar );
+        const geoLayar = new THREE.PlaneGeometry(2.2255, 1.245); // param1 : lebar, param2 : tinggi unitnya
+        const mpmLayar = new THREE.MeshBasicMaterial({ map: videoTexture });
+        const layar = new THREE.Mesh(geoLayar, mpmLayar);
         layar.position.set(-5.7, 18.5, -88.25)
-        layar.scale.set(7.3,7.8,8)
+        layar.scale.set(7.3, 7.8, 8)
         layar.rotation.set(0, -Math.PI / 2, 0)
-        scene.add( layar );  
+        scene.add(layar);
 
         // COLLISION
         function playerCollisions() {
@@ -553,42 +553,67 @@
         }
 
         // animasi crosshair
-        // Elemen crosshair
         const crosshair = document.querySelector('.crosshair');
         const focusIndicator = crosshair.querySelector('.focus-indicator');
 
-
-        let interactWith; // buat simpen dia interact sama benda apa
+        let canInteract;
+        let interactWith;
+        let interactableObject = [];
         // Fungsi untuk memperbarui crosshair
         function updateCrosshair() {
             // Lakukan raycast dari kamera
             if (television) {
-                raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-                const intersectTelevision = raycaster.intersectObject(television);
-
-                if (intersectTelevision.length > 0 && intersectTelevision[0].distance <= 20) {
-                    focusIndicator.style.visibility = 'visible';
+                let index = -1;
+                let foundIntersect = false;
+                while (index < interactableObject.length - 1 && !foundIntersect) {
+                    index++;
+                    let element = interactableObject[index];
+                    foundIntersect = checkUpdateIntersect(camera, raycaster, television, focusIndicator);
+                }
+                canInteract = foundIntersect
+                if (foundIntersect) {
+                    interactWith = interactableObject[index];
                 } else {
-                    focusIndicator.style.visibility = 'hidden';
+                    interactWith = null
                 }
             }
         }
+        function handleInteract() {
+            if (keyboard['F'] || keyboard['f']) {
+                if (!canInteract) {
+                    showAlert(alertContainer, "No interactions possible right now.", "warning")
+                } else {
+                    if (interactWith === television) {
+                        videoOn ? video.pause() : video.play();
+                        videoOn = !videoOn;
+                        showAlert(alertContainer, "You interact with television", "success")
+                    }
+                }
+            }
+
+        }
 
         // animate function
+        let lastControlUpdateTime = 0;
+        const CONTROL_UPDATE_INTERVAL = 0.1; // 0.1 detik
         function animate() {
             requestAnimationFrame(animate);
 
             updateSpotlightPosition();
             updateObjectPosition();
+            updateCrosshair();
+            setInfoBox();
+            const currentTime = performance.now() / 1000;
+            if (currentTime - lastControlUpdateTime >= CONTROL_UPDATE_INTERVAL) {
+                handleInteract();
+                lastControlUpdateTime = currentTime;
+            }
 
             const deltaTime = Math.min(0.05, clock.getDelta()) / STEPS_PER_FRAME;
             for (let i = 0; i < STEPS_PER_FRAME; i++) {
-                updateCrosshair();
                 controls(deltaTime);
                 updatePlayer(deltaTime);
-                if (playerOnFloor) {
-                    jump = false;
-                }
+                jump = !playerOnFloor;
             }
             control.lock();
 
@@ -615,12 +640,19 @@
                 discoLamp.visible = false;
             }
 
-            if (kordinatspan) {
-                kordinatspan.textContent = `${Math.round(camera.position.x)}, ${Math.round(camera.position.y)}, ${Math.round(camera.position.z)}`
-            }
             renderer.render(scene, camera);
         }
         animate();
+
+        function setInfoBox() {
+            if (kordinatspan) {
+                kordinatspan.textContent = `${Math.round(camera.position.x)}, ${Math.round(camera.position.y)}, ${Math.round(camera.position.z)}`
+            }
+            if (interactinfospan) {
+                interactinfospan.textContent = `${canInteract ? 'TRUE' : 'FALSE'}`;
+                interactinfospan.className = `${canInteract ? 'interactTrue' : 'interactFalse'}`
+            }
+        }
     </script>
 </body>
 

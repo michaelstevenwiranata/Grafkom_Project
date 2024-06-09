@@ -20,3 +20,17 @@ export function getCenterOBJ(object) {
 
     return { ...center }
 }
+export function showAlert(alertContainer, message, type, duration = 2000) {
+    const alert = document.createElement('div');
+    alert.classList.add('alert', `alert-${type}`);
+    alert.textContent = message;
+  
+    alertContainer.appendChild(alert);
+  
+    setTimeout(() => {
+      alert.classList.add('fadeOut');
+      setTimeout(() => {
+        alert.remove();
+      }, 300); // duration of fadeOut animation
+    }, duration);
+  }
