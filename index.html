@@ -39,18 +39,19 @@
         let kordinatspan = document.getElementById("kordinat");
         let interactinfospan = document.getElementById("interactinfo");
 
+        // #region IMPORT LIBRARY & FILE
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
         import { Octree } from 'three/addons/math/Octree.js';
         import { Capsule } from 'three/addons/math/Capsule.js';
         import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-
         // utils, helper
         import { checkUpdateIntersect } from "./game.js";
         import { getCenterOBJ, getBoundaryHWD, showAlert } from "./helper.js"
         import { setupLighting } from "./lighting.js"
+        // #endregion
 
-        // INITIAL SETUP
+        // #region VARIABLE & SETUP
         const scene = new THREE.Scene();
         const raycaster = new THREE.Raycaster();
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -60,19 +61,18 @@
         const clock = new THREE.Clock();
         const textureLoader = new THREE.TextureLoader();
 
-        // interact & game component
-        let video, videoOn = false;
-        const alertContainer = document.getElementById('alert-container');
-
+        // player component
         const GRAVITY = 30;
         const STEPS_PER_FRAME = 5;
-        // player collider
         const worldOctree = new Octree();
         const playerCollider = new Capsule(new THREE.Vector3(0, 0.05, 0), new THREE.Vector3(0, 10, 0), 0.35);
         const playerVelocity = new THREE.Vector3();
         const playerDirection = new THREE.Vector3();
-
         let playerOnFloor = false;
+
+        // interact & game component
+        let video, videoOn = false;
+        const alertContainer = document.getElementById('alert-container');
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0x000000);
@@ -80,13 +80,11 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.VSMShadowMap;
         document.body.appendChild(renderer.domElement);
-
         const control = new PointerLockControls(camera, renderer.domElement)
+        // #endregion
 
-
-        // CENTER LIGHTING
-
-        // buat cube invisible supaya spotlight targetnya ke cube terus
+        // #region CENTER LIGHTING
+        let wideSpotlight = false;
         const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
         cube.visible = false;
         scene.add(cube);
@@ -107,7 +105,6 @@
             spotlight.target.updateMatrixWorld();
         }
 
-        let wideSpotlight = false;
         const spotlight = new THREE.SpotLight(0xffffff, 2);
         spotlight.position.set(0, 5, 10);
         spotlight.angle = Math.PI / 16;
@@ -121,8 +118,9 @@
 
         spotlight.castShadow = true;
         scene.add(spotlight);
+        // #endregion
 
-        // LIGHTING
+        // #region OTHER LIGHTING
         setupLighting(scene, camera)
         // lighting yang nyala dengan kondisi tertentu
         const garageLight = new THREE.PointLight(0xffffff, 500, 1000, 2);
@@ -140,9 +138,10 @@
         discoLamp.shadow.mapSize.width = 2048;
         discoLamp.shadow.mapSize.height = 2048;
         discoLamp.shadow.bias = -0.005;
-
         scene.add(discoLamp)
-        // EVENT HANDLING
+        // #endregion
+
+        // #region EVENT HANDLING
         let keyboard = {};
         document.addEventListener('keydown', function (event) {
             keyboard[event.key] = true;
@@ -186,8 +185,9 @@
                 }
             }
         }
+        // #endregion
 
-        // LOAD MODELS
+        // #region LOAD MODELS & VIDEO
         let alas, rumah, pintuUtama, streetLamp1,
             streetLamp2, kipas, sofa, longTable,
             bulan, kasur, pigura, mazda, glight,
@@ -279,7 +279,6 @@
                     loader.load('./public/simple_ceiling_fan.glb', function (gltf) {
                         kipas = gltf.scene;
                         kipas.scale.set(0.02, 0.01, 0.02)
-                        let center = getCenterOBJ(kipas);
                         kipas.position.set(-18, 35.5, -88);
 
                         kipas.traverse(objShadow);
@@ -466,7 +465,9 @@
         layar.rotation.set(0, -Math.PI / 2, 0)
         scene.add(layar);
 
-        // COLLISION
+        // #endregion
+
+        // #region COLLISION
         function playerCollisions() {
             const result = worldOctree.capsuleIntersect(playerCollider);
             playerOnFloor = false;
@@ -510,24 +511,11 @@
             playerDirection.cross(camera.up);
             return playerDirection;
         }
+        // #endregion
 
-        // ANIMATE
+        // #region ANIMATION
         let openPintuUtama = false;
-        const colors = [
-            "#ff0000", // Merah
-            "#ff7f00", // Jingga
-            "#ffff00", // Kuning
-            "#7fff00", // Hijau muda
-            "#00ff00", // Hijau
-            "#00ff7f", // Hijau laut
-            "#00ffff", // Biru muda
-            "#007fff", // Biru laut
-            "#0000ff", // Biru
-            "#7f00ff", // Ungu
-            "#ff00ff", // Magenta
-            "#ff007f"  // Merah muda
-        ];
-
+        const colors = [ "#ff0000", "#ff7f00", "#ffff00", "#7fff00", "#00ff00", "#00ff7f", "#00ffff", "#007fff", "#0000ff", "#7f00ff", "#ff00ff", "#ff007f"];
         let currentColorIndex = 0;
 
         // Function to change the light color
@@ -551,11 +539,11 @@
                 }
             }
         }
+        //#endregion 
 
-        // animasi crosshair
+        // #region CROSSHAIR HANDLER & ANIMATION
         const crosshair = document.querySelector('.crosshair');
         const focusIndicator = crosshair.querySelector('.focus-indicator');
-
         let canInteract;
         let interactWith;
         let interactableObject = [];
@@ -592,6 +580,7 @@
             }
 
         }
+        // #endregion
 
         // animate function
         let lastControlUpdateTime = 0;
