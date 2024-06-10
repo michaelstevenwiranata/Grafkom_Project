@@ -47,7 +47,7 @@
         import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
         // utils, helper
         import { checkUpdateIntersect } from "./game.js";
-        import { getCenterOBJ, getBoundaryHWD, showAlert } from "./helper.js"
+        import { getCenterOBJ, getBoundaryHWD, showAlert, createCollisionCube } from "./helper.js"
         import { setupLighting } from "./lighting.js"
         // #endregion
 
@@ -191,7 +191,8 @@
         let alas, rumah, pintuUtama, streetLamp1,
             streetLamp2, kipas, sofa, longTable,
             bulan, kasur, pigura, mazda, glight,
-            radio, radioTable, disco, television;
+            radio, radioTable, disco, television,
+            bedroomTable;
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -213,14 +214,12 @@
                 scene.add(alas);
                 worldOctree.fromGraphNode(alas);
 
-
                 // load rumah
                 const ruanganPromise = new Promise((resolve, reject) => {
                     loader.load('./public/rumah.glb', function (gltf) {
                         rumah = gltf.scene;
                         rumah.scale.set(10, 10, 10)
                         rumah.position.set(0, 0, 0);
-
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
@@ -236,7 +235,6 @@
                         pintuUtama = gltf.scene;
                         pintuUtama.scale.set(10, 10, 10)
                         pintuUtama.position.set(-44, 6.5, -70);
-
                         pintuUtama.traverse(objShadow);
                         scene.add(pintuUtama);
                         resolve();
@@ -250,9 +248,7 @@
                         streetLamp1 = gltf.scene;
                         streetLamp1.scale.set(10, 15, 10)
                         streetLamp1.position.set(-20, -6, -60);
-
                         streetLamp1.traverse(objShadow);
-
                         scene.add(streetLamp1);
                         resolve();
                     }, undefined, reject);
@@ -265,9 +261,7 @@
                         streetLamp2 = gltf.scene;
                         streetLamp2.scale.set(10, 15, 10)
                         streetLamp2.position.set(-120, -6, -60);
-
                         streetLamp2.traverse(objShadow);
-
                         scene.add(streetLamp2);
                         resolve();
                     }, undefined, reject);
@@ -280,9 +274,7 @@
                         kipas = gltf.scene;
                         kipas.scale.set(0.02, 0.01, 0.02)
                         kipas.position.set(-18, 35.5, -88);
-
                         kipas.traverse(objShadow);
-
                         scene.add(kipas);
                         resolve();
                     }, undefined, reject);
@@ -296,10 +288,9 @@
                         sofa.scale.set(0.1, 0.1, 0.1)
                         sofa.rotation.y = Math.PI;
                         sofa.position.set(-25, 6.5, -88);
-
                         sofa.traverse(objShadow);
 
-                        worldOctree.fromGraphNode(sofa);
+                        createCollisionCube(sofa, worldOctree, scene)
                         scene.add(sofa);
                         resolve();
                     }, undefined, reject);
@@ -311,10 +302,9 @@
                     loader.load('./public/long_table.glb', function (gltf) {
                         longTable = gltf.scene;
                         longTable.position.set(-3.5, 6, -88);
-
                         longTable.traverse(objShadow);
 
-                        worldOctree.fromGraphNode(longTable);
+                        createCollisionCube(longTable, worldOctree, scene);
                         scene.add(longTable);
                         resolve();
                     }, undefined, reject);
@@ -327,9 +317,7 @@
                         bulan = gltf.scene;
                         bulan.scale.set(10, 10, 10);
                         bulan.position.set(-100, 300, -100);
-
                         bulan.traverse(objShadow);
-
                         scene.add(bulan);
                         resolve();
                     }, undefined, reject);
@@ -345,7 +333,7 @@
                         kasur.rotation.y = Math.PI / 2;
                         kasur.traverse(objShadow);
 
-                        worldOctree.fromGraphNode(kasur);
+                        createCollisionCube(kasur, worldOctree, scene);
                         scene.add(kasur);
                         resolve();
                     }, undefined, reject);
@@ -360,7 +348,6 @@
                         pigura.scale.set(1.5, 1.5, 1.5)
                         pigura.rotation.y = Math.PI / 2;
                         pigura.traverse(objShadow);
-
                         scene.add(pigura);
                         resolve();
                     }, undefined, reject);
@@ -374,7 +361,6 @@
                         glight.position.set(57, 31.85, -70);
                         glight.scale.set(0.01, 0.01, 0.01)
                         glight.traverse(objShadow);
-
                         scene.add(glight);
                         resolve();
                     }, undefined, reject);
@@ -388,13 +374,13 @@
                         radioTable.traverse(objShadow);
                         radioTable.scale.set(2.6, 2.6, 2.6);
                         radioTable.position.set(-70, 7, -88);
-
+                        createCollisionCube(radioTable, worldOctree, scene)
                         scene.add(radioTable);
                         resolve();
                     }, undefined, reject);
                 })
                 await radioTablePromise
-                // 
+                
                 //load radio
                 const radioPromise = new Promise((resolve, reject) => {
                     loader.load('./public/radio_vef202.glb', function (gltf) {
@@ -417,13 +403,13 @@
                         disco.traverse(objShadow);
                         disco.scale.set(4, 4, 4);
                         disco.position.set(-70, 35, -88);
-
                         scene.add(disco);
                         resolve();
                     }, undefined, reject);
                 })
                 await discoPromise
 
+                // load television
                 const televisionPromise = new Promise((resolve, reject) => {
                     loader.load('./public/television.glb', function (gltf) {
                         television = gltf.scene;
@@ -432,15 +418,27 @@
                         television.scale.set(20, 20, 20);
                         television.rotation.y = -Math.PI / 2;
                         television.position.set(-5, 12.25, -88);
-
-
                         scene.add(television);
                         resolve();
                     }, undefined, reject);
                 })
                 await televisionPromise
 
-                await Promise.all([ruanganPromise, streetlamp1Promise, streetlamp2Promise,
+                // load bedroom table
+                const bedroomTablePromise = new Promise((resolve, reject) => {
+                    loader.load('./public/table.glb', function (gltf) {
+                        bedroomTable = gltf.scene;
+                        bedroomTable.traverse(objShadow);
+                        bedroomTable.scale.set(2.6, 2.6, 2.6);
+                        bedroomTable.position.set(-80, 7, -150);
+                        createCollisionCube(bedroomTable, worldOctree, scene)
+                        scene.add(bedroomTable);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await bedroomTablePromise
+
+                await Promise.all([bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
                     kipasPromise, sofaPromise, longTablePromise, kasurPromise,
                     piguraPromise, glightPromise, radioTablePromise, discoPromise,
                     radioPromise, televisionPromise]);
