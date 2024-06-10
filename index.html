@@ -21,11 +21,29 @@
     </div>
     <video id="video_ww" style="display: none;"></video>
     <div id="alert-container"></div>
+    <div class="inventory-container">
+        <div class="inventory-box" id="item1">
+            <img src="https://via.placeholder.com/50" alt="">
+        </div>
+        <div class="inventory-box" id="item2">
+            <img src="https://via.placeholder.com/50" alt="">
+        </div>
+        <div class="inventory-box" id="item3">
+            <img src="https://via.placeholder.com/50" alt="">
+        </div>
+        <div class="inventory-box" id="item4">
+            <img src="https://via.placeholder.com/50" alt="">
+        </div>
+        <div class="inventory-box" id="item5">
+            <img src="https://via.placeholder.com/50" alt="">
+        </div>
+    </div>
     <div class="crosshair">
         <div class="vertical"></div>
         <div class="horizontal"></div>
         <div class="focus-indicator">press<span class="characterHighlight"> F </span> to interact</div>
     </div>
+
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
@@ -36,11 +54,53 @@
     }
     </script>
     <script type="module">
+        // #region UI HTML
         let kordinatspan = document.getElementById("kordinat");
         let interactinfospan = document.getElementById("interactinfo");
+        function setInventoryItem(itemIndex, imageUrl) {
+            var inventoryBox = document.getElementById('item' + itemIndex);
+            var img = inventoryBox.querySelector('img');
+
+            if (imageUrl) {
+                img.src = imageUrl;
+                inventoryBox.style.backgroundColor = ''; // Remove background color if image exists
+                img.style.width = '50px'; // Force image width to 50px
+                img.style.height = '50px'; // Force image height to 50px
+            } else {
+                img.src = ''; // Clear the image if no image URL provided
+                inventoryBox.style.backgroundColor = '#ccc'; // Set background color for empty box
+            }
+        }
+        document.addEventListener('keypress', function (event) {
+            var key = event.key;
+            var inventoryIndex = parseInt(key);
+            // Highlight the inventory item if valid key pressed
+            if (inventoryIndex >= 1 && inventoryIndex <= 5) {
+                var inventoryItem = document.getElementById('item' + inventoryIndex);
+                inventoryItem.classList.add('highlight');
+                selectedInventory = inventoryIndex - 1;
+                console.log(selectedInventory);
+                console.log(inventoryList[selectedInventory])
+                // Remove highlight from all other inventory items
+                var inventoryItems = document.querySelectorAll('.inventory-box');
+                inventoryItems.forEach(function (item) {
+                    if (item !== inventoryItem) {
+                        item.classList.remove('highlight');
+                    }
+                });
+            }
+        });
+
+        setInventoryItem(1, 'https://via.placeholder.com/100');
+        setInventoryItem(2, 'https://via.placeholder.com/100');
+        setInventoryItem(3, 'https://via.placeholder.com/100');
+        setInventoryItem(4, 'https://via.placeholder.com/100');
+        setInventoryItem(5, 'https://via.placeholder.com/100');
+        // #endregion 
 
         // #region IMPORT LIBRARY & FILE
         import * as THREE from 'three';
+        import * as TWEEN from '@tweenjs/tween.js'
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
         import { Octree } from 'three/addons/math/Octree.js';
         import { Capsule } from 'three/addons/math/Capsule.js';
@@ -81,6 +141,10 @@
         renderer.shadowMap.type = THREE.VSMShadowMap;
         document.body.appendChild(renderer.domElement);
         const control = new PointerLockControls(camera, renderer.domElement)
+
+        // inventory list
+        let selectedInventory = null;
+        let inventoryList = [false, false, false, false]
         // #endregion
 
         // #region CENTER LIGHTING
@@ -166,6 +230,14 @@
             if (keyboard['d'] || keyboard['D']) {
                 playerVelocity.add(getSideVector().multiplyScalar(speedDelta));
             }
+            if (playerOnFloor) {
+                if (keyboard[' ']) {
+                    jump = true;
+                    playerVelocity.y = 15;
+                }
+            }
+        }
+        function specialControl() {
             if (keyboard['r'] || keyboard['R']) {
                 spotlight.visible = !spotlight.visible;
             }
@@ -178,12 +250,6 @@
                     wideSpotlight = false;
                 }
             }
-            if (playerOnFloor) {
-                if (keyboard[' ']) {
-                    jump = true;
-                    playerVelocity.y = 15;
-                }
-            }
         }
         // #endregion
 
@@ -192,7 +258,11 @@
             streetLamp2, kipas, sofa, longTable,
             bulan, kasur, pigura, mazda, glight,
             radio, radioTable, disco, television,
-            bedroomTable;
+            bedroomTable, tape1, lemari,
+            rak_0, rak_2, rak_3;
+        let rak_0_open = 1, rak_2_open = 1, rak_3_open = 1;
+        let tapeMaterial, radioMaterial, rakMaterial;
+
         function objShadow(child) {
             if (child.isMesh) {
                 child.castShadow = true;
@@ -223,7 +293,7 @@
                         rumah.traverse(objShadow);
 
                         scene.add(rumah);
-                        // worldOctree.fromGraphNode(rumah);
+                        worldOctree.fromGraphNode(rumah);
                         resolve();
                     }, undefined, reject);
                 });
@@ -380,7 +450,7 @@
                     }, undefined, reject);
                 })
                 await radioTablePromise
-                
+
                 //load radio
                 const radioPromise = new Promise((resolve, reject) => {
                     loader.load('./public/radio_vef202.glb', function (gltf) {
@@ -389,7 +459,11 @@
                         radio.scale.set(1.5, 1.5, 1.5);
                         radio.position.set(-70, 15, -88);
                         radio.rotation.y = Math.PI;
-
+                        radio.traverse(function (child) {
+                            if (child.isMesh) {
+                                radioMaterial = child.material;
+                            }
+                        });
                         scene.add(radio);
                         resolve();
                     }, undefined, reject);
@@ -398,11 +472,11 @@
 
                 // load disco lamp
                 const discoPromise = new Promise((resolve, reject) => {
-                    loader.load('./public/disco_ball.glb', function (gltf) {
+                    loader.load('./public/garage_light.glb', function (gltf) {
                         disco = gltf.scene;
+                        disco.scale.set(0.01, 0.01, 0.01);
+                        disco.position.set(-70, 31.85, -88);
                         disco.traverse(objShadow);
-                        disco.scale.set(4, 4, 4);
-                        disco.position.set(-70, 35, -88);
                         scene.add(disco);
                         resolve();
                     }, undefined, reject);
@@ -429,7 +503,7 @@
                     loader.load('./public/table.glb', function (gltf) {
                         bedroomTable = gltf.scene;
                         bedroomTable.traverse(objShadow);
-                        bedroomTable.scale.set(2.6, 2.6, 2.6);
+                        bedroomTable.scale.set(2.6, 2.3, 2.6);
                         bedroomTable.position.set(-80, 7, -150);
                         createCollisionCube(bedroomTable, worldOctree, scene)
                         scene.add(bedroomTable);
@@ -438,12 +512,60 @@
                 })
                 await bedroomTablePromise
 
-                await Promise.all([bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
+                // load tape 1
+                const tape1Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/tape_1.glb', function (gltf) {
+                        tape1 = gltf.scene;
+                        tape1.name = "tape1";
+                        tape1.traverse(objShadow);
+                        tape1.scale.set(26, 26, 26);
+                        tape1.position.set(-80, 14.5, -150);
+                        tape1.traverse(function (child) {
+                            if (child.isMesh) {
+                                tapeMaterial = child.material;
+                            }
+                        });
+
+                        createCollisionCube(tape1, worldOctree, scene)
+                        scene.add(tape1);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await tape1Promise
+
+                // load lemari
+                const lemariPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/lemari.glb', function (gltf) {
+                        lemari = gltf.scene;
+                        lemari.traverse(objShadow);
+                        lemari.scale.set(9, 9, 9);
+                        lemari.position.set(15, 6.5, -85);
+                        lemari.rotation.y = Math.PI / 2;
+
+                        // simpen per component lemarinya
+                        rak_0 = lemari.getObjectByName("rak_0");
+                        rak_2 = lemari.getObjectByName("rak_2");
+                        rak_3 = lemari.getObjectByName("rak_3");
+
+                        rak_0.traverse(function (child) {
+                            if (child.isMesh) {
+                                rakMaterial = child.material;
+                            }
+                        });
+
+                        createCollisionCube(lemari, worldOctree, scene)
+                        scene.add(lemari);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await lemariPromise
+
+                await Promise.all([lemariPromise, tape1Promise, bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
                     kipasPromise, sofaPromise, longTablePromise, kasurPromise,
                     piguraPromise, glightPromise, radioTablePromise, discoPromise,
                     radioPromise, televisionPromise]);
                 // add interactable object;
-                interactableObject.push(television)
+                interactableObject.push(television, tape1, radio, rak_0, rak_2, rak_3)
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -513,22 +635,12 @@
 
         // #region ANIMATION
         let openPintuUtama = false;
-        const colors = [ "#ff0000", "#ff7f00", "#ffff00", "#7fff00", "#00ff00", "#00ff7f", "#00ffff", "#007fff", "#0000ff", "#7f00ff", "#ff00ff", "#ff007f"];
-        let currentColorIndex = 0;
-
-        // Function to change the light color
-        function changeColor() {
-            discoLamp.color.set(colors[currentColorIndex]);
-            currentColorIndex = (currentColorIndex + 1) % colors.length;
-        }
-        setInterval(changeColor, 1000);
 
         // animasi buka pintu
         function bukaPintuUtama() {
             if (pintuUtama) {
                 if (openPintuUtama) {
                     let boundary = getBoundaryHWD(pintuUtama);
-                    console.log(boundary)
                     pintuUtama.position.set(-48, 6.5, -75);
                     pintuUtama.rotation.set(0, Math.PI / 2, 0);
                 } else {
@@ -548,13 +660,13 @@
         // Fungsi untuk memperbarui crosshair
         function updateCrosshair() {
             // Lakukan raycast dari kamera
-            if (television) {
+            if (television, tape1, radio) {
                 let index = -1;
                 let foundIntersect = false;
                 while (index < interactableObject.length - 1 && !foundIntersect) {
                     index++;
                     let element = interactableObject[index];
-                    foundIntersect = checkUpdateIntersect(camera, raycaster, television, focusIndicator);
+                    foundIntersect = checkUpdateIntersect(camera, raycaster, element, focusIndicator);
                 }
                 canInteract = foundIntersect
                 if (foundIntersect) {
@@ -562,7 +674,39 @@
                 } else {
                     interactWith = null
                 }
+
+                // tape highlight
+                foundIntersect && interactableObject[index] == tape1 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape1, tapeMaterial);
+                foundIntersect && interactableObject[index] == radio ? applyBrighterMaterial(interactableObject[index], radioMaterial) : restoreOriginalMaterial(radio, radioMaterial);
+                foundIntersect && interactableObject[index] == rak_0 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_0, rakMaterial);
+                foundIntersect && interactableObject[index] == rak_2 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_2, rakMaterial);
+                foundIntersect && interactableObject[index] == rak_3 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_3, rakMaterial);
             }
+        }
+        function applyBrighterMaterial(object, material) {
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        map: material.map,
+                        color: material.color,
+                        emissive: material.color,
+                        emissiveIntensity: 0.5
+                    });
+                }
+            });
+        }
+        function restoreOriginalMaterial(object, material) {
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.material = material;
+                }
+            });
+        }
+        function interactMovementTween(object, amountToMove, time) {
+            const tween = new TWEEN.Tween(object.position)
+                .to({ x: object.position.x + amountToMove }, 2000) 
+                .easing(TWEEN.Easing.Quadratic.Out) 
+                .start();
         }
         function handleInteract() {
             if (keyboard['F'] || keyboard['f']) {
@@ -573,7 +717,26 @@
                         videoOn ? video.pause() : video.play();
                         videoOn = !videoOn;
                         showAlert(alertContainer, "You interact with television", "success")
-                    }
+                    } else if (interactWith == tape1) {
+                        setInventoryItem(1, "./public/fototape.png")
+                        inventoryList[0] = true;
+                        tape1.position.set(0, -10, 0);
+                    } else if (interactWith == radio) {
+                        if (selectedInventory !== null && inventoryList[selectedInventory] == true) {
+                            showAlert(alertContainer, "Berhasil", "success")
+                        } else {
+                            showAlert(alertContainer, "Please select any tape", "warning")
+                        }
+                    } else if (interactWith == rak_0) {
+                        interactMovementTween(rak_0, 0.1*rak_0_open, 2000);
+                        rak_0_open *= -1;
+                    } else if (interactWith == rak_2) {
+                        interactMovementTween(rak_2, 0.1*rak_2_open, 2000);
+                        rak_2_open *= -1;
+                    } else if (interactWith == rak_3) {
+                        interactMovementTween(rak_3, 0.1*rak_3_open, 2000);
+                        rak_3_open *= -1;
+                    } 
                 }
             }
 
@@ -586,6 +749,7 @@
         function animate() {
             requestAnimationFrame(animate);
 
+            TWEEN.update();
             updateSpotlightPosition();
             updateObjectPosition();
             updateCrosshair();
@@ -593,6 +757,7 @@
             const currentTime = performance.now() / 1000;
             if (currentTime - lastControlUpdateTime >= CONTROL_UPDATE_INTERVAL) {
                 handleInteract();
+                specialControl();
                 lastControlUpdateTime = currentTime;
             }
 
