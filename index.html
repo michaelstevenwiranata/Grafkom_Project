@@ -258,8 +258,8 @@
             streetLamp2, kipas, sofa, longTable,
             bulan, kasur, pigura, mazda, glight,
             radio, radioTable, disco, television,
-            bedroomTable, tape1, lemari,
-            rak_0, rak_2, rak_3;
+            bedroomTable, tape1, lemari, tape2, tape3,
+            rak_0, rak_2, rak_3, pintu1, pintu2, pintu3;
         let rak_0_open = 1, rak_2_open = 1, rak_3_open = 1;
         let tapeMaterial, radioMaterial, rakMaterial;
 
@@ -310,7 +310,43 @@
                         resolve();
                     }, undefined, reject);
                 });
-                await ruanganPromise;
+                await pintuPromise;
+
+                const pintu1Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/pintuDepan.glb', function (gltf) {
+                        pintu1 = gltf.scene;
+                        pintu1.scale.set(9, 9.5, 10)
+                        pintu1.position.set(-59, 6.5, -105.5);
+                        pintu1.traverse(objShadow);
+                        scene.add(pintu1);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await pintu1Promise;
+
+                const pintu2Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/pintuDepan.glb', function (gltf) {
+                        pintu2 = gltf.scene;
+                        pintu2.scale.set(9, 9.5, 10)
+                        pintu2.position.set(-59, 6.5, -140);
+                        pintu2.traverse(objShadow);
+                        scene.add(pintu2);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await pintu2Promise;
+
+                const pintu3Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/pintuDepan.glb', function (gltf) {
+                        pintu3 = gltf.scene;
+                        pintu3.scale.set(10.1, 9.5, 10)
+                        pintu3.position.set(35.63, 6.5, -105.5);
+                        pintu3.traverse(objShadow);
+                        scene.add(pintu3);
+                        resolve();
+                    }, undefined, reject);
+                });
+                await pintu3Promise;
 
                 // load street lamp 1
                 const streetlamp1Promise = new Promise((resolve, reject) => {
@@ -526,12 +562,25 @@
                             }
                         });
 
-                        createCollisionCube(tape1, worldOctree, scene)
                         scene.add(tape1);
                         resolve();
                     }, undefined, reject);
                 })
                 await tape1Promise
+
+                const tape2Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/tape_2.glb', function (gltf) {
+                        tape2 = gltf.scene;
+                        tape2.name = "tape2";
+                        tape2.traverse(objShadow);
+                        tape2.scale.set(26, 26, 26);
+                        tape2.position.set(5, 16.6, -130);
+
+                        scene.add(tape2);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await tape2Promise
 
                 // load lemari
                 const lemariPromise = new Promise((resolve, reject) => {
@@ -560,12 +609,13 @@
                 })
                 await lemariPromise
 
-                await Promise.all([lemariPromise, tape1Promise, bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
+                await Promise.all([pintu1Promise, pintu2Promise, pintu3Promise, lemariPromise, 
+                    tape1Promise, bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
                     kipasPromise, sofaPromise, longTablePromise, kasurPromise,
                     piguraPromise, glightPromise, radioTablePromise, discoPromise,
                     radioPromise, televisionPromise]);
                 // add interactable object;
-                interactableObject.push(television, tape1, radio, rak_0, rak_2, rak_3)
+                interactableObject.push(television, tape1, tape2, radio, rak_0, rak_2, rak_3)
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -635,6 +685,7 @@
 
         // #region ANIMATION
         let openPintuUtama = false;
+        let openPintu1 = false, openPintu2 = false, openPintu3 = false;
 
         // animasi buka pintu
         function bukaPintuUtama() {
@@ -649,6 +700,43 @@
                 }
             }
         }
+        function bukaPintu1() {
+            if (pintu1) {
+                if (openPintu1) {
+                    let boundary = getBoundaryHWD(pintu1);
+                    pintu1.position.set(-55, 6.5, -101.5);
+                    pintu1.rotation.set(0, Math.PI / 2, 0);
+                } else {
+                    pintu1.position.set(-59, 6.5, -105.5);
+                    pintu1.rotation.set(0, 0, 0);
+                }
+            }
+        }
+        function bukaPintu2() {
+            if (pintu2) {
+                if (openPintu2) {
+                    let boundary = getBoundaryHWD(pintu2);
+                    pintu2.position.set(-55, 6.5, -144);
+                    pintu2.rotation.set(0, Math.PI / 2, 0);
+                } else {
+                    pintu2.position.set(-59, 6.5, -140);
+                    pintu2.rotation.set(0, 0, 0);
+                }
+            }
+        }
+        function bukaPintu3() {
+            if (pintu3) {
+                if (openPintu3) {
+                    let boundary = getBoundaryHWD(pintu3);
+                    pintu3.position.set(31.2, 6.5, -101.5);
+                    pintu3.rotation.set(0, Math.PI / 2, 0);
+                } else {
+                    pintu3.position.set(35.63, 6.5, -105.5);
+                    pintu3.rotation.set(0, 0, 0);
+                }
+            }
+        }
+
         //#endregion 
 
         // #region CROSSHAIR HANDLER & ANIMATION
@@ -677,6 +765,7 @@
 
                 // tape highlight
                 foundIntersect && interactableObject[index] == tape1 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape1, tapeMaterial);
+                foundIntersect && interactableObject[index] == tape2 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape2, tapeMaterial);
                 foundIntersect && interactableObject[index] == radio ? applyBrighterMaterial(interactableObject[index], radioMaterial) : restoreOriginalMaterial(radio, radioMaterial);
                 foundIntersect && interactableObject[index] == rak_0 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_0, rakMaterial);
                 foundIntersect && interactableObject[index] == rak_2 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_2, rakMaterial);
@@ -702,9 +791,9 @@
                 }
             });
         }
-        function interactMovementTween(object, amountToMove, time) {
+        function interactMovementTween(object, positionTarget, time) {
             const tween = new TWEEN.Tween(object.position)
-                .to({ x: object.position.x + amountToMove }, 2000) 
+                .to({ x: positionTarget }, 2000) 
                 .easing(TWEEN.Easing.Quadratic.Out) 
                 .start();
         }
@@ -713,6 +802,8 @@
                 if (!canInteract) {
                     showAlert(alertContainer, "No interactions possible right now.", "warning")
                 } else {
+                    console.log(selectedInventory);
+                    console.log(inventoryList)
                     if (interactWith === television) {
                         videoOn ? video.pause() : video.play();
                         videoOn = !videoOn;
@@ -721,21 +812,25 @@
                         setInventoryItem(1, "./public/fototape.png")
                         inventoryList[0] = true;
                         tape1.position.set(0, -10, 0);
-                    } else if (interactWith == radio) {
-                        if (selectedInventory !== null && inventoryList[selectedInventory] == true) {
+                    }  else if (interactWith == tape2) {
+                        setInventoryItem(2, "./public/fototape.png")
+                        inventoryList[1] = true;
+                        tape2.position.set(0, -10, 0);
+                    } else if (interactWith == radio) { 
+                        if (selectedInventory >= 0 && selectedInventory <= 2 && inventoryList[selectedInventory] == true) {
                             showAlert(alertContainer, "Berhasil", "success")
                         } else {
                             showAlert(alertContainer, "Please select any tape", "warning")
                         }
                     } else if (interactWith == rak_0) {
-                        interactMovementTween(rak_0, 0.1*rak_0_open, 2000);
-                        rak_0_open *= -1;
+                        interactMovementTween(rak_0, rak_0_open * 0.1 , 2000);
+                        rak_0_open = rak_0_open == 1 ? 0 : 1;
                     } else if (interactWith == rak_2) {
-                        interactMovementTween(rak_2, 0.1*rak_2_open, 2000);
-                        rak_2_open *= -1;
+                        interactMovementTween(rak_2, rak_2_open * 0.1, 2000);
+                        rak_2_open = rak_2_open == 1 ? 0 : 1;
                     } else if (interactWith == rak_3) {
-                        interactMovementTween(rak_3, 0.1*rak_3_open, 2000);
-                        rak_3_open *= -1;
+                        interactMovementTween(rak_3, rak_3_open * 0.1, 2000);
+                        rak_3_open = rak_3_open == 1 ? 0 : 1;
                     } 
                 }
             }
@@ -773,25 +868,16 @@
             if (kipas) kipas.rotation.y += 0.1;
 
             // animasi buka pintu utama
-            if (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50) {
-                openPintuUtama = true;
-            } else {
-                openPintuUtama = false;
-            }
+            openPintuUtama = (camera.position.x >= -55 && camera.position.x <= -30 && camera.position.z >= -90 && camera.position.z <= -50);
+            openPintu2 = (camera.position.x >= -66 && camera.position.x <= -54 && camera.position.z >= -158 && camera.position.z <= -128);
+            openPintu1 = (camera.position.x >= -66 && camera.position.x <= -54 && camera.position.z >= -120 && camera.position.z <= -92);
+            openPintu3 = (camera.position.x >= 30 && camera.position.x <= 42 && camera.position.z >= -120 && camera.position.z <= -92);
             bukaPintuUtama();
+            bukaPintu1(); bukaPintu2(); bukaPintu3();
 
-            if (camera.position.x >= 30 && camera.position.x <= 95 && camera.position.z >= -105 && camera.position.z <= -40) {
-                garageLight.visible = true;
-            } else {
-                garageLight.visible = false;
-            }
-
-            if (camera.position.x >= -88 && camera.position.x <= -53 && camera.position.z >= -105 && camera.position.z <= -70) {
-                discoLamp.visible = true;
-            } else {
-                discoLamp.visible = false;
-            }
-
+            garageLight.visible = (camera.position.x >= 30 && camera.position.x <= 95 && camera.position.z >= -105 && camera.position.z <= -40);
+            discoLamp.visible = (camera.position.x >= -88 && camera.position.x <= -53 && camera.position.z >= -105 && camera.position.z <= -70);
+            
             renderer.render(scene, camera);
         }
         animate();
