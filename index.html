@@ -79,8 +79,8 @@
                 var inventoryItem = document.getElementById('item' + inventoryIndex);
                 inventoryItem.classList.add('highlight');
                 selectedInventory = inventoryIndex - 1;
-                console.log(selectedInventory);
-                console.log(inventoryList[selectedInventory])
+                // console.log(selectedInventory);
+                // console.log(inventoryList[selectedInventory])
                 // Remove highlight from all other inventory items
                 var inventoryItems = document.querySelectorAll('.inventory-box');
                 inventoryItems.forEach(function (item) {
@@ -133,6 +133,25 @@
         // interact & game component
         let video, videoOn = false;
         const alertContainer = document.getElementById('alert-container');
+        // game audio
+        let listener = new THREE.AudioListener();
+        camera.add(listener);
+        let audioLoader = new THREE.AudioLoader();
+        let audioTape1 = new THREE.Audio(listener);
+        let audioTape2 = new THREE.Audio(listener);
+        let audioTape3 = new THREE.Audio(listener);
+        audioLoader.load('./public/audio.mp3', function (buffer) {
+            audioTape1.setBuffer(buffer);
+            audioTape1.setVolume(1);
+        });
+        audioLoader.load('./public/audio2.mp3', function (buffer) {
+            audioTape2.setBuffer(buffer);
+            audioTape2.setVolume(1);
+        });
+        audioLoader.load('./public/audio3.mp3', function (buffer) {
+            audioTape3.setBuffer(buffer);
+            audioTape3.setVolume(1);
+        });
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0x000000);
@@ -209,6 +228,25 @@
         let keyboard = {};
         document.addEventListener('keydown', function (event) {
             keyboard[event.key] = true;
+
+            if (usingPc) {
+                let keyName;
+                animateText(event.key);
+                if (event.key === 'Enter') {
+                    keyName = 'key_ENTER';
+                } else if (event.key === 'Backspace') {
+                    keyName = 'key_DELETE';
+                } else if (event.key === ' ') {
+                    keyName = 'key_SPACE';
+                } else {
+                    keyName = `key_${event.key.toUpperCase()}`;
+                }
+
+                const keyMesh = pc.getObjectByName(keyName);
+                if (keyMesh) {
+                    pressKey(keyMesh);
+                }
+            }
         });
         document.addEventListener('keyup', function (event) {
             keyboard[event.key] = false;
@@ -217,37 +255,44 @@
         // movement handling
         let jump = false;
         function controls(deltaTime) {
-            const speedDelta = deltaTime * (playerOnFloor ? 20 : 5) + 0.1;
-            if (keyboard['W'] || keyboard['w']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(speedDelta));
-            }
-            if (keyboard['a'] || keyboard['A']) {
-                playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));
-            }
-            if (keyboard['s'] || keyboard['S']) {
-                playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));
-            }
-            if (keyboard['d'] || keyboard['D']) {
-                playerVelocity.add(getSideVector().multiplyScalar(speedDelta));
-            }
-            if (playerOnFloor) {
-                if (keyboard[' ']) {
-                    jump = true;
-                    playerVelocity.y = 15;
+            if (!usingPc) {
+                const speedDelta = deltaTime * (playerOnFloor ? 20 : 5) + 0.1;
+                if (keyboard['W'] || keyboard['w']) {
+                    playerVelocity.add(getForwardVector().multiplyScalar(speedDelta));
                 }
+                if (keyboard['a'] || keyboard['A']) {
+                    playerVelocity.add(getSideVector().multiplyScalar(- speedDelta));
+                }
+                if (keyboard['s'] || keyboard['S']) {
+                    playerVelocity.add(getForwardVector().multiplyScalar(- speedDelta));
+                }
+                if (keyboard['d'] || keyboard['D']) {
+                    playerVelocity.add(getSideVector().multiplyScalar(speedDelta));
+                }
+                if (playerOnFloor) {
+                    if (keyboard[' ']) {
+                        jump = true;
+                        playerVelocity.y = 15;
+                    }
+                }
+            }
+            if (keyboard['x'] || keyboard['X']) {
+                usingPc = false;
             }
         }
         function specialControl() {
-            if (keyboard['r'] || keyboard['R']) {
-                spotlight.visible = !spotlight.visible;
-            }
-            if (keyboard['t'] || keyboard['T']) {
-                if (wideSpotlight == false) {
-                    spotlight.angle = Math.PI / 4;
-                    wideSpotlight = true;
-                } else {
-                    spotlight.angle = Math.PI / 16;
-                    wideSpotlight = false;
+            if (!usingPc) {
+                if (keyboard['r'] || keyboard['R']) {
+                    spotlight.visible = !spotlight.visible;
+                }
+                if (keyboard['t'] || keyboard['T']) {
+                    if (wideSpotlight == false) {
+                        spotlight.angle = Math.PI / 4;
+                        wideSpotlight = true;
+                    } else {
+                        spotlight.angle = Math.PI / 16;
+                        wideSpotlight = false;
+                    }
                 }
             }
         }
@@ -259,7 +304,8 @@
             bulan, kasur, pigura, mazda, glight,
             radio, radioTable, disco, television,
             bedroomTable, tape1, lemari, tape2, tape3,
-            rak_0, rak_2, rak_3, pintu1, pintu2, pintu3;
+            rak_0, rak_2, rak_3, pintu1, pintu2, pintu3, 
+            pc, pcTable, fence1, fence2, fence3, fence4;
         let rak_0_open = 1, rak_2_open = 1, rak_3_open = 1;
         let tapeMaterial, radioMaterial, rakMaterial;
 
@@ -582,6 +628,20 @@
                 })
                 await tape2Promise
 
+                const tape3Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/tape_3.glb', function (gltf) {
+                        tape3 = gltf.scene;
+                        tape3.name = "tape2";
+                        tape3.traverse(objShadow);
+                        tape3.scale.set(26, 26, 26);
+                        tape3.position.set(21, 13.6, -92);
+
+                        scene.add(tape3);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await tape3Promise
+
                 // load lemari
                 const lemariPromise = new Promise((resolve, reject) => {
                     loader.load('./public/lemari.glb', function (gltf) {
@@ -609,13 +669,77 @@
                 })
                 await lemariPromise
 
-                await Promise.all([pintu1Promise, pintu2Promise, pintu3Promise, lemariPromise, 
+                const pcTablePromise = new Promise((resolve, reject) => {
+                    loader.load('./public/table_desk_-_3mb.glb', function (gltf) {
+                        pcTable = gltf.scene;
+                        pcTable.traverse(objShadow);
+                        pcTable.scale.set(10, 9, 10);
+
+                        pcTable.position.set(89, 6.5, -70);
+                        pcTable.rotation.y = -Math.PI / 2
+                        createCollisionCube(pcTable, worldOctree, scene)
+                        scene.add(pcTable);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await pcTablePromise
+
+                const pcPromise = new Promise((resolve, reject) => {
+                    loader.load('./public/komputer.glb', function (gltf) {
+                        pc = gltf.scene;
+                        pc.traverse(objShadow);
+                        pc.position.set(89, 14.1, -70);
+                        pc.rotation.y = -Math.PI / 2
+                        scene.add(pc);
+                        resolve();
+                    }, undefined, reject);
+                })
+                await pcPromise
+
+                const fence1Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/wooden_fence.glb', function (gltf) {
+                        fence1 = gltf.scene; fence1.traverse(objShadow); fence1.scale.set(1,0.75,6); fence1.position.set(0,0,40); fence1.rotation.y = -Math.PI / 2; 
+                        createCollisionCube(fence1, worldOctree, scene)
+                        scene.add(fence1); resolve();
+                    }, undefined, reject);
+                })
+                await fence1Promise
+
+                const fence2Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/wooden_fence.glb', function (gltf) {
+                        fence2 = gltf.scene; fence2.traverse(objShadow); fence2.scale.set(1,0.75,6); fence2.position.set(0,0,-200); fence2.rotation.y = -Math.PI / 2; 
+                        createCollisionCube(fence2, worldOctree, scene)
+                        scene.add(fence2); resolve();
+                    }, undefined, reject);
+                })
+                await fence2Promise
+
+                const fence3Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/wooden_fence.glb', function (gltf) {
+                        fence3 = gltf.scene; fence3.traverse(objShadow); fence3.scale.set(1,0.75,6); fence3.position.set(120,0,-80);
+                        createCollisionCube(fence3, worldOctree, scene)
+                        scene.add(fence3); resolve();
+                    }, undefined, reject);
+                })
+                await fence3Promise
+
+                const fence4Promise = new Promise((resolve, reject) => {
+                    loader.load('./public/wooden_fence.glb', function (gltf) {
+                        fence4 = gltf.scene; fence4.traverse(objShadow); fence4.scale.set(1,0.75,6); fence4.position.set(-120,0,-80);
+                        createCollisionCube(fence4, worldOctree, scene)
+                        scene.add(fence4); resolve();
+                    }, undefined, reject);
+                })
+                await fence4Promise
+
+                await Promise.all([fence1Promise, fence2Promise, fence3Promise, fence4Promise, 
+                    tape3Promise, pcTablePromise, pcPromise, pintu2Promise, pintu3Promise, lemariPromise,
                     tape1Promise, bedroomTablePromise, ruanganPromise, streetlamp1Promise, streetlamp2Promise,
                     kipasPromise, sofaPromise, longTablePromise, kasurPromise,
                     piguraPromise, glightPromise, radioTablePromise, discoPromise,
                     radioPromise, televisionPromise]);
                 // add interactable object;
-                interactableObject.push(television, tape1, tape2, radio, rak_0, rak_2, rak_3)
+                interactableObject.push(television, tape1, tape2, tape3, radio, rak_0, rak_2, rak_3, pc)
             } catch (error) {
                 console.log("Error loading models : " + error);
             }
@@ -637,7 +761,7 @@
 
         // #endregion
 
-        // #region COLLISION
+        // #region COLLISION & PLAYER COLIDE
         function playerCollisions() {
             const result = worldOctree.capsuleIntersect(playerCollider);
             playerOnFloor = false;
@@ -648,6 +772,14 @@
                 }
                 playerCollider.translate(result.normal.multiplyScalar(result.depth));
             }
+        }
+        // move paksa hehe
+        export const movePlayerCollider = (x, y, z) => {
+            const startVector = new THREE.Vector3(x, y, z);
+            const endVector = new THREE.Vector3(x, y + 11, z);
+
+            playerCollider.start.copy(startVector);
+            playerCollider.end.copy(endVector);
         }
         // buat update player letaknya
         function updatePlayer(deltaTime) {
@@ -755,6 +887,9 @@
                     index++;
                     let element = interactableObject[index];
                     foundIntersect = checkUpdateIntersect(camera, raycaster, element, focusIndicator);
+                    if(foundIntersect && element == tape3 && rak_0_open == 1){
+                        foundIntersect = false;
+                    }
                 }
                 canInteract = foundIntersect
                 if (foundIntersect) {
@@ -766,6 +901,7 @@
                 // tape highlight
                 foundIntersect && interactableObject[index] == tape1 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape1, tapeMaterial);
                 foundIntersect && interactableObject[index] == tape2 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape2, tapeMaterial);
+                foundIntersect && interactableObject[index] == tape3 ? applyBrighterMaterial(interactableObject[index], tapeMaterial) : restoreOriginalMaterial(tape3, tapeMaterial);
                 foundIntersect && interactableObject[index] == radio ? applyBrighterMaterial(interactableObject[index], radioMaterial) : restoreOriginalMaterial(radio, radioMaterial);
                 foundIntersect && interactableObject[index] == rak_0 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_0, rakMaterial);
                 foundIntersect && interactableObject[index] == rak_2 ? applyBrighterMaterial(interactableObject[index], rakMaterial) : restoreOriginalMaterial(rak_2, rakMaterial);
@@ -793,8 +929,8 @@
         }
         function interactMovementTween(object, positionTarget, time) {
             const tween = new TWEEN.Tween(object.position)
-                .to({ x: positionTarget }, 2000) 
-                .easing(TWEEN.Easing.Quadratic.Out) 
+                .to(positionTarget, 2000)
+                .easing(TWEEN.Easing.Quadratic.Out)
                 .start();
         }
         function handleInteract() {
@@ -812,29 +948,130 @@
                         setInventoryItem(1, "./public/fototape.png")
                         inventoryList[0] = true;
                         tape1.position.set(0, -10, 0);
-                    }  else if (interactWith == tape2) {
+                    } else if (interactWith == tape2) {
                         setInventoryItem(2, "./public/fototape.png")
                         inventoryList[1] = true;
                         tape2.position.set(0, -10, 0);
-                    } else if (interactWith == radio) { 
+                    } else if (interactWith == tape3) {
+                        setInventoryItem(3, "./public/fototape.png")
+                        inventoryList[2] = true;
+                        tape3.position.set(0, -10, 0);
+                    } else if (interactWith == radio) {
                         if (selectedInventory >= 0 && selectedInventory <= 2 && inventoryList[selectedInventory] == true) {
-                            showAlert(alertContainer, "Berhasil", "success")
+                            showAlert(alertContainer, "You interact with radio", "success")
+                            handleRadioPlay();
                         } else {
                             showAlert(alertContainer, "Please select any tape", "warning")
                         }
                     } else if (interactWith == rak_0) {
-                        interactMovementTween(rak_0, rak_0_open * 0.1 , 2000);
+                        interactMovementTween(rak_0, {x: rak_0_open * 0.1}, 2000);
+                        interactMovementTween(tape3, {z: -92 - (rak_0_open * 2)})
                         rak_0_open = rak_0_open == 1 ? 0 : 1;
                     } else if (interactWith == rak_2) {
-                        interactMovementTween(rak_2, rak_2_open * 0.1, 2000);
+                        interactMovementTween(rak_2, {x: rak_2_open * 0.1}, 2000);
                         rak_2_open = rak_2_open == 1 ? 0 : 1;
                     } else if (interactWith == rak_3) {
-                        interactMovementTween(rak_3, rak_3_open * 0.1, 2000);
+                        interactMovementTween(rak_3, {x: rak_3_open * 0.1}, 2000);
                         rak_3_open = rak_3_open == 1 ? 0 : 1;
-                    } 
+                    } else if (interactWith === pc) {
+                        usingPc = true;
+                        showAlert(alertContainer, "You interact with pc", "success")
+                        movePlayerCollider(82, 6, -71)
+                        camera.lookAt(new THREE.Vector3(85, 11, -68));
+                    }
                 }
             }
+        }
+        function handleRadioPlay() {
+            if (selectedInventory === 0) {
+                audioTape1.play();
+            } else if (selectedInventory === 1) {
+                audioTape2.play();
+            } else if (selectedInventory === 2) {
+                audioTape3.play();
+            }
+        }
 
+        // #endregion
+
+        // #region INTERACT PC
+        let usingPc = false
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 300;
+        canvas.height = 300;
+        context.font = '54px Arial';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        let word = '_';
+        let word2 = '_';
+        let word3 = '_';
+        context.fillText(`${word} ${word2} ${word3}`, canvas.width / 2, canvas.height / 2)
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.MeshBasicMaterial({ map: texture });
+        const geometry = new THREE.PlaneGeometry(4, 3);
+        const textMesh = new THREE.Mesh(geometry, material);
+        textMesh.rotation.y = -Math.PI / 2
+
+        textMesh.position.set(89, 16.4, -70)
+        scene.add(textMesh);
+
+        let correct = false;
+        function updateText(newText) {
+            if (usingPc) {
+                if (word == '_') {
+                    word = newText;
+                } else if (word2 == '_') {
+                    word2 = newText
+                } else if (word3 == '_') {
+                    word3 = newText
+                }
+                if (word != '_' && word2 != '_' && word3 != '_') {
+                    if (word == 1 && word2 == 2 && word3 == 3) {
+                        if (!correct) {
+                            showAlert(alertContainer, "Correct", "success")
+                        }
+                        correct = true
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        context.fillText(`solved`, canvas.width / 2, canvas.height / 2)
+                        usingPc = false;
+                        texture.needsUpdate = true;
+                    } else {
+                        showAlert(alertContainer, "Wrong password, Please Try Again", "warning")
+                        word = '_'
+                        word2 = '_'
+                        word3 = '_'
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        texture.needsUpdate = true;
+                    }
+                }
+                if (!correct) {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.fillText(`${word} ${word2} ${word3}`, canvas.width / 2, canvas.height / 2)
+                    texture.needsUpdate = true;
+                }
+            }
+        }
+
+        function animateText(newText) {
+            const from = { opacity: 0 };
+            const to = { opacity: 1 };
+            if (newText != 'x' && newText != 'X') {
+                updateText(newText);
+            }
+
+
+        }
+        function pressKey(keyMesh) {
+            const initialPosition = keyMesh.position.y;
+            const pressDistance = 0.1;
+            const pressDuration = 100; // ms
+            new TWEEN.Tween(keyMesh.position)
+                .to({ y: initialPosition - pressDistance }, pressDuration / 2)
+                .yoyo(true)
+                .repeat(1)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .start();
         }
         // #endregion
 
@@ -877,7 +1114,7 @@
 
             garageLight.visible = (camera.position.x >= 30 && camera.position.x <= 95 && camera.position.z >= -105 && camera.position.z <= -40);
             discoLamp.visible = (camera.position.x >= -88 && camera.position.x <= -53 && camera.position.z >= -105 && camera.position.z <= -70);
-            
+
             renderer.render(scene, camera);
         }
         animate();
