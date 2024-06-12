@@ -140,18 +140,34 @@
         let audioTape1 = new THREE.Audio(listener);
         let audioTape2 = new THREE.Audio(listener);
         let audioTape3 = new THREE.Audio(listener);
+        let backsoundAudio = new THREE.Audio(listener);
+        let pressAudio = new THREE.Audio(listener);
         audioLoader.load('./public/audio.mp3', function (buffer) {
             audioTape1.setBuffer(buffer);
+            audioTape1.setRolloffFactor(2);
             audioTape1.setVolume(1);
         });
         audioLoader.load('./public/audio2.mp3', function (buffer) {
             audioTape2.setBuffer(buffer);
+            audioTape2.setRolloffFactor(2);
             audioTape2.setVolume(1);
         });
         audioLoader.load('./public/audio3.mp3', function (buffer) {
             audioTape3.setBuffer(buffer);
+            audioTape3.setRolloffFactor(2);
             audioTape3.setVolume(1);
         });
+        audioLoader.load('./public/pressAudio.mp3', function (buffer) {
+            pressAudio.setBuffer(buffer);
+            pressAudio.setVolume(1);
+        });
+        audioLoader.load('./public/backsound.mp3', function (buffer) {
+            backsoundAudio.setBuffer(buffer);
+            backsoundAudio.setVolume(0.5);
+            backsoundAudio.setLoop(true);
+            backsoundAudio.play();
+        });
+        
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setClearColor(0x000000);
@@ -244,6 +260,7 @@
 
                 const keyMesh = pc.getObjectByName(keyName);
                 if (keyMesh) {
+                    pressAudio.play();
                     pressKey(keyMesh);
                 }
             }
@@ -541,6 +558,9 @@
                         radio.scale.set(1.5, 1.5, 1.5);
                         radio.position.set(-70, 15, -88);
                         radio.rotation.y = Math.PI;
+                        radio.add(audioTape1);
+                        radio.add(audioTape2);
+                        radio.add(audioTape3);
                         radio.traverse(function (child) {
                             if (child.isMesh) {
                                 radioMaterial = child.material;
